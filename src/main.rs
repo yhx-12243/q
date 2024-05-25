@@ -23,7 +23,7 @@ use ideal::Ideal;
 
 #[derive(clap::Parser)]
 struct Args {
-    #[arg(short, value_name = "discriminant")]
+    #[arg(short = 'D', value_name = "discriminant")]
     D: NonZeroI64,
     #[arg(short, long, value_name = "input")]
     input: String,
