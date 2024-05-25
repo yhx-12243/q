@@ -11,6 +11,14 @@ use std::{
     time::{Duration, Instant},
 };
 
+struct DropGuard(String);
+
+impl Drop for DropGuard {
+    fn drop(&mut self) {
+        let _ = fs::remove_file(&self.0);
+    }
+}
+
 #[derive(Deserialize)]
 struct YafuOutput {
     #[serde(rename = "factors-prime")]
@@ -19,6 +27,7 @@ struct YafuOutput {
 
 pub fn factor(n: &BigUint) -> anyhow::Result<Vec<(BigUint, u32)>> {
     let t1 = std::time::Instant::now();
+    #[allow(clippy::transmute_undefined_repr)]
     let td = unsafe { std::mem::transmute::<Instant, Duration>(t1) };
     let result = format!("../data/factor/q{}.json", td.as_nanos());
     let mut child = Command::new("yafu")
@@ -38,26 +47,16 @@ pub fn factor(n: &BigUint) -> anyhow::Result<Vec<(BigUint, u32)>> {
 
     let file = fs::File::open(&result)?;
 
-    struct Guard(String);
-
-    impl Drop for Guard {
-        fn drop(&mut self) {
-            let _ = fs::remove_file(&self.0);
-        }
-    }
-
-    let _guard = Guard(result);
+    let _guard = DropGuard(result);
     let reader = BufReader::new(file);
     let output = serde_json::from_reader::<_, YafuOutput>(reader)?;
 
     let mut factors = BTreeMap::new();
     for factor in output.factors {
-        let factor = factor.parse::<BigUint>()?;
+        let factor = factor.parse()?;
         match factors.entry(factor) {
             Occupied(mut occupied) => *occupied.get_mut() += 1,
-            Vacant(vacant) => {
-                vacant.insert(1);
-            }
+            Vacant(vacant) => { vacant.insert(1); },
         }
     }
 
@@ -73,7 +72,7 @@ mod tests {
     use super::factor;
 
     #[test]
-	#[rustfmt::skip]
+    #[rustfmt::skip]
     fn test_factor() {
         let n = BigUint::from_str(&"4".repeat(67)).unwrap();
         let result = factor(&n).unwrap();

@@ -33,7 +33,7 @@ impl QI {
         }
     }
 
-    pub fn reduce2(a: &mut QI, b: &mut QI) -> bool {
+    pub fn reduce2(a: &mut Self, b: &mut Self) -> bool {
         if a.is_zero() {
             core::mem::swap(a, b);
             return false;
@@ -86,11 +86,11 @@ impl QI {
         changed
     }
 
-    pub fn reduce3(a: &mut QI, b: &mut QI, c: &mut QI) {
+    pub fn reduce3(a: &mut Self, b: &mut Self, c: &mut Self) {
         loop {
-            let ab = QI::reduce2(a, b);
-            let bc = QI::reduce2(b, c);
-            let ca = QI::reduce2(c, a);
+            let ab = Self::reduce2(a, b);
+            let bc = Self::reduce2(b, c);
+            let ca = Self::reduce2(c, a);
             if !(ab || bc || ca) {
                 if !c.is_zero() {
                     if b.is_zero() {
@@ -250,9 +250,9 @@ mod tests {
     }
 
     #[test]
-	#[rustfmt::skip]
+    #[rustfmt::skip]
     fn latex_test_1() {
-		let _guard = discriminant::DISC_TEST_LOCK.lock().unwrap();
+        let _guard = discriminant::DISC_TEST_LOCK.lock().unwrap();
         unsafe { discriminant::set(NonZeroI64::new(-6).unwrap()).unwrap() };
 
         check(QI::from(BigInt::from(-15)), "-15");
@@ -273,9 +273,9 @@ mod tests {
     }
 
     #[test]
-	#[rustfmt::skip]
+    #[rustfmt::skip]
     fn latex_test_2() {
-		let _guard = discriminant::DISC_TEST_LOCK.lock().unwrap();
+        let _guard = discriminant::DISC_TEST_LOCK.lock().unwrap();
         unsafe { discriminant::set(NonZeroI64::new(-7).unwrap()).unwrap() };
 
         check(QI::from(BigInt::from(-30)), "-15");

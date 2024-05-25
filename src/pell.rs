@@ -65,7 +65,8 @@ fn convergent(qs: &[BigUint]) -> (BigUint, BigUint) {
     (mat.a, mat.c)
 }
 
-// solve P x^2 - Q x y + R y^2 where P, R = 0, 1 (R can't be zero)
+/// solve P x^2 - Q x y + R y^2 where P, R = 0, 1 (R can't be zero).
+#[allow(clippy::option_option)]
 fn solve_simple(P: &BigUint, Q: &BigUint, R: &BigUint) -> Option<Option<(BigUint, BigUint)>> {
     if R.is_one() {
         Some(Some((BigUint::ZERO, BigUint::one())))
@@ -107,8 +108,8 @@ fn solve_by_convergents(
     let R_ = mod_2_64(R);
 
     let empirical = (x.len() + y.len() + 5) * 2;
-    let mut qs = Vec::with_capacity(empirical as usize);
-    let mut indices = Vec::with_capacity(empirical as usize);
+    let mut qs = Vec::with_capacity(empirical);
+    let mut indices = Vec::with_capacity(empirical);
     loop {
         let (q, r) = x.div_rem(&y);
 
@@ -141,7 +142,7 @@ fn solve_by_convergents(
 
 /// A quadratic irrational (a + √d) / b, where b | a^2 - d.
 #[derive(Clone, Hash, PartialEq, Eq)]
-struct QIN {
+struct Qin {
     a: BigInt,
     b: BigInt,
 }
@@ -153,7 +154,7 @@ fn solve_by_convergents_QIN(
     Q: &BigUint,
     R: &BigUint,
     D: u64,
-    mut x: QIN,
+    mut x: Qin,
 ) -> Option<(/* bool, */ BigUint, BigUint)> {
     if R.is_one() {
         return Some((/* false, */ BigUint::ZERO, BigUint::one()));
@@ -180,10 +181,10 @@ fn solve_by_convergents_QIN(
     let Q_ = mod_2_64(Q);
     let R_ = mod_2_64(R);
 
-    let empirical = (D.ilog2() + 5) * 2;
-    let mut hash = HashSet::with_capacity(empirical as usize);
-    let mut qs = Vec::with_capacity(empirical as usize);
-    let mut indices = Vec::with_capacity(empirical as usize);
+    let empirical = ((D.ilog2() + 5) * 2) as usize;
+    let mut hash = HashSet::with_capacity(empirical);
+    let mut qs = Vec::with_capacity(empirical);
+    let mut indices = Vec::with_capacity(empirical);
     loop {
         let q = (&x.a + (D_sqrt + x.b.is_negative() as u64)).magnitude() / x.b.magnitude();
 
@@ -219,12 +220,13 @@ fn solve_by_convergents_QIN(
         x.b = (D - &x.a * &x.a) / &x.b;
         x.a = -x.a;
 
-        qs.push(q_.into_parts().1)
+        qs.push(q_.into_parts().1);
     }
 }
 
 /// Solve x^2 + D y^2 = p.
 pub fn work_neg(D: u64, p: &BigUint) -> Option<QI> {
+    #[allow(clippy::verbose_bit_mask)]
     let e = !D & 3 == 0;
 
     let mut qr = {
@@ -232,7 +234,7 @@ pub fn work_neg(D: u64, p: &BigUint) -> Option<QI> {
         if !d_p.is_zero() {
             d_p = p - d_p;
         }
-        quadratic_residue(&d_p, &p)?
+        quadratic_residue(&d_p, p)?
     };
 
     if e {
@@ -279,7 +281,7 @@ pub fn work_neg(D: u64, p: &BigUint) -> Option<QI> {
         // P = (Q * Q - D) / R
 
         // solve P y^2 - 2 Q y z + R z^2 = 1
-        let (y, z) = if (&Q).max(&P) <= (&Q).max(&R) {
+        let (y, z) = if (&Q).max(&P) <= (&Q).max(R) {
             solve_by_convergents(&P, &(&Q * 2u32), R, Q.clone(), P.clone())?
         } else {
             solve_by_convergents(&P, &(&Q * 2u32), R, R.clone(), Q.clone())?
@@ -306,7 +308,7 @@ pub fn work_neg(D: u64, p: &BigUint) -> Option<QI> {
 pub fn work_pos(D: u64, p: &BigUint) -> Option<QI> {
     let e = D & 3 == 1;
 
-    let qr = quadratic_residue(&(BigUint::from(D) % p), &p)?;
+    let qr = quadratic_residue(&(BigUint::from(D) % p), p)?;
 
     if e {
         if p.digits() == [2] {
@@ -314,7 +316,7 @@ pub fn work_pos(D: u64, p: &BigUint) -> Option<QI> {
                 // solving x^2 + x y - (D-1)/4 y^2 = 2,
                 // (let x = -2 z)
                 // -(D-1)/8 y^2 - y z + 2 z^2 = 1
-                let qin = QIN {
+                let qin = Qin {
                     a: BigInt::from(-1),
                     b: BigInt::from(D / 4),
                 };
@@ -322,7 +324,7 @@ pub fn work_pos(D: u64, p: &BigUint) -> Option<QI> {
                     &BigInt::from(-((D / 8) as i64)),
                     &BigUint::one(),
                     &BigUint::from(2u32),
-                    D as u64,
+                    D,
                     qin,
                 )?;
 
@@ -348,7 +350,7 @@ pub fn work_pos(D: u64, p: &BigUint) -> Option<QI> {
         };
 
         // solve P y^2 - Q y z + R z^2 = 1
-        let qin = QIN {
+        let qin = Qin {
             a: if P.is_negative() {
                 BigInt::from_biguint(Sign::Minus, Q.clone())
             } else {
@@ -357,7 +359,7 @@ pub fn work_pos(D: u64, p: &BigUint) -> Option<QI> {
             b: P.abs() * 2,
         };
 
-        let (/* _is_neg, */ y, z) = solve_by_convergents_QIN(&P, &Q, R, D as u64, qin)?;
+        let (/* _is_neg, */ y, z) = solve_by_convergents_QIN(&P, &Q, R, D, qin)?;
 
         let x = {
             let a = &Q * &y;
@@ -383,7 +385,7 @@ pub fn work_pos(D: u64, p: &BigUint) -> Option<QI> {
         };
 
         // solve P y^2 - 2 Q y z + R z^2 = ±1
-        let qin = QIN {
+        let qin = Qin {
             a: if P.is_negative() {
                 BigInt::from_biguint(Sign::Minus, Q.clone())
             } else {
@@ -392,7 +394,7 @@ pub fn work_pos(D: u64, p: &BigUint) -> Option<QI> {
             b: P.abs(),
         };
 
-        let (/* _is_neg, */ y, z) = solve_by_convergents_QIN(&P, &(&Q * 2u32), R, D as u64, qin)?;
+        let (/* _is_neg, */ y, z) = solve_by_convergents_QIN(&P, &(&Q * 2u32), R, D, qin)?;
 
         let x = {
             let a = &Q * &y;
@@ -411,7 +413,7 @@ pub fn work_pos(D: u64, p: &BigUint) -> Option<QI> {
     }
 }
 
-/// Solve x^2 - D y^2 = p.
+/// Solve x^2 - D y^2 = ±p.
 pub fn work(D: i64, p: &BigUint) -> Option<QI> {
     if D < 0 {
         work_neg(D.unsigned_abs(), p)

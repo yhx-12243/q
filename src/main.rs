@@ -17,11 +17,7 @@ mod pell;
 mod qi;
 mod qr;
 
-use core::{
-    fmt::{rt::Argument, Arguments, Formatter},
-    num::NonZeroI64,
-};
-use std::io::Write;
+use core::num::NonZeroI64;
 
 use ideal::Ideal;
 
@@ -44,6 +40,10 @@ fn main() -> anyhow::Result<()> {
     let ideals = ideal.factor()?;
 
     {
+        use core::fmt::{rt::Argument, Arguments, Formatter};
+        use std::io::Write;
+
+        #[allow(clippy::unit_arg, clippy::unnecessary_wraps)]
         fn latex_wrapper(ideal: &Ideal, fmt: &mut Formatter) -> core::fmt::Result {
             Ok(ideal.latex(fmt))
         }

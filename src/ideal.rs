@@ -17,7 +17,7 @@ pub struct Ideal(SmallVec<[QI; 2]>);
 
 impl Ideal {
     #[inline]
-    pub fn principal(x: QI) -> Self {
+    pub const fn principal(x: QI) -> Self {
         Self(unsafe { SmallVec::from_const_with_len_unchecked([x, QI::ZERO], 1) })
     }
 
@@ -77,7 +77,7 @@ impl Ideal {
     }
 
     /// p should be a prime, otherwise UB.
-    pub fn factor_prime(p: &BigUint) -> SmallVec<[Ideal; 2]> {
+    pub fn factor_prime(p: &BigUint) -> SmallVec<[Self; 2]> {
         let d = discriminant::get();
         let e = d.get() & 3 == 1;
         let q = if e { p * 2u32 } else { p.clone() };
@@ -88,17 +88,11 @@ impl Ideal {
                 // splits
                 let ideal = Self(smallvec_inline![
                     BigInt::from(q.clone()).into(),
-                    QI {
-                        a: BigInt::one(),
-                        b: BigInt::one(),
-                    }
+                    QI { a: BigInt::one(), b: BigInt::one() },
                 ]);
                 let ideal_ = Self(smallvec_inline![
                     BigInt::from(q).into(),
-                    QI {
-                        a: -BigInt::one(),
-                        b: BigInt::one()
-                    }
+                    QI { a: -BigInt::one(), b: BigInt::one() },
                 ]);
                 smallvec_inline![ideal, ideal_]
             } else {
@@ -139,10 +133,7 @@ impl Ideal {
             );
             let ideal = Self(smallvec_inline![
                 BigInt::from(q.clone()).into(),
-                QI {
-                    a: px,
-                    b: one.clone(),
-                }
+                QI { a: px, b: one.clone() }
             ]);
             let ideal_ = Self(smallvec_inline![
                 BigInt::from(q).into(),
@@ -156,15 +147,12 @@ impl Ideal {
         }
     }
 
-    pub fn factor(&mut self) -> anyhow::Result<Vec<(Ideal, u32)>> {
+    pub fn factor(&mut self) -> anyhow::Result<Vec<(Self, u32)>> {
         self.reduce();
 
         let d = discriminant::get();
         let e = d.get() & 3 == 1;
-        if let [x] = &*self.0
-            && x.b.is_zero()
-            && x.a.is_positive()
-        {
+        if let [x] = &*self.0 && x.b.is_zero() && x.a.is_positive() {
             let n = x.a.magnitude();
             let factors = if e { factor(&(n / 2u32)) } else { factor(n) }?;
             let mut result = Vec::with_capacity(factors.len() * 2);
@@ -232,10 +220,7 @@ impl FromStr for Ideal {
     type Err = anyhow::Error;
 
     fn from_str(s: &str) -> anyhow::Result<Self> {
-        match s.parse::<QI>() {
-            Ok(x) => Ok(Ideal::principal(x)),
-            Err(e) => Err(e.into()),
-        }
+        s.parse().map(Self::principal)
     }
 }
 
@@ -257,61 +242,61 @@ mod tests {
     }
 
     #[test]
-	#[rustfmt::skip]
+    #[rustfmt::skip]
     fn latex_test_1() {
-		let _guard = discriminant::DISC_TEST_LOCK.lock().unwrap();
+        let _guard = discriminant::DISC_TEST_LOCK.lock().unwrap();
         unsafe { discriminant::set(NonZeroI64::new(-6).unwrap()).unwrap() };
 
-		let ideal = Ideal(smallvec![
-        	QI::from(BigInt::from(-15)),
-        	QI::from(BigInt::from(-1)),
-        	QI::from(BigInt::from(0)),
-        	QI::from(BigInt::from(1)),
-        	QI::from(BigInt::from(42)),
+        let ideal = Ideal(smallvec![
+            QI::from(BigInt::from(-15)),
+            QI::from(BigInt::from(-1)),
+            QI::from(BigInt::from(0)),
+            QI::from(BigInt::from(1)),
+            QI::from(BigInt::from(42)),
 
-        	QI { a: 0.into(), b: (-2).into() },
-        	QI { a: 0.into(), b: (-1).into() },
-        	QI { a: 0.into(), b: 1.into() },
-        	QI { a: 0.into(), b: 2.into() },
+            QI { a: 0.into(), b: (-2).into() },
+            QI { a: 0.into(), b: (-1).into() },
+            QI { a: 0.into(), b: 1.into() },
+            QI { a: 0.into(), b: 2.into() },
 
-        	QI { a: (-1).into(), b: (-2).into() },
-        	QI { a: 1.into(), b: (-1).into() },
-        	QI { a: 2.into(), b: 1.into() },
-        	QI { a: (-2).into(), b: 2.into() },
-		]);
+            QI { a: (-1).into(), b: (-2).into() },
+            QI { a: 1.into(), b: (-1).into() },
+            QI { a: 2.into(), b: 1.into() },
+            QI { a: (-2).into(), b: 2.into() },
+        ]);
 
-		check(ideal, r"\left(-15,-1,0,1,42,-2\sqrt{-6},-\sqrt{-6},\sqrt{-6},2\sqrt{-6},-1-2\sqrt{-6},1-\sqrt{-6},2+\sqrt{-6},-2+2\sqrt{-6}\right)");
+        check(ideal, r"\left(-15,-1,0,1,42,-2\sqrt{-6},-\sqrt{-6},\sqrt{-6},2\sqrt{-6},-1-2\sqrt{-6},1-\sqrt{-6},2+\sqrt{-6},-2+2\sqrt{-6}\right)");
     }
 
     #[test]
-	#[rustfmt::skip]
+    #[rustfmt::skip]
     fn latex_test_2() {
-		let _guard = discriminant::DISC_TEST_LOCK.lock().unwrap();
+        let _guard = discriminant::DISC_TEST_LOCK.lock().unwrap();
         unsafe { discriminant::set(NonZeroI64::new(-7).unwrap()).unwrap() };
 
-		let ideal = Ideal(smallvec![
-        	QI::from(BigInt::from(-30)),
-        	QI::from(BigInt::from(-2)),
-        	QI::from(BigInt::from(0)),
-        	QI::from(BigInt::from(2)),
-        	QI::from(BigInt::from(42)),
+        let ideal = Ideal(smallvec![
+            QI::from(BigInt::from(-30)),
+            QI::from(BigInt::from(-2)),
+            QI::from(BigInt::from(0)),
+            QI::from(BigInt::from(2)),
+            QI::from(BigInt::from(42)),
 
-        	QI { a: 0.into(), b: (-4).into() },
-        	QI { a: 0.into(), b: (-2).into() },
-        	QI { a: 0.into(), b: 2.into() },
-        	QI { a: 0.into(), b: 4.into() },
+            QI { a: 0.into(), b: (-4).into() },
+            QI { a: 0.into(), b: (-2).into() },
+            QI { a: 0.into(), b: 2.into() },
+            QI { a: 0.into(), b: 4.into() },
 
-        	QI { a: (-2).into(), b: (-4).into() },
-        	QI { a: 2.into(), b: (-2).into() },
-        	QI { a: 4.into(), b: 2.into() },
-        	QI { a: (-4).into(), b: 4.into() },
+            QI { a: (-2).into(), b: (-4).into() },
+            QI { a: 2.into(), b: (-2).into() },
+            QI { a: 4.into(), b: 2.into() },
+            QI { a: (-4).into(), b: 4.into() },
 
-        	QI { a: 3.into(), b: (-3).into() },
-        	QI { a: (-3).into(), b: (-1).into() },
-        	QI { a: (-1).into(), b: 1.into() },
-        	QI { a: 1.into(), b: 3.into() },
-		]);
+            QI { a: 3.into(), b: (-3).into() },
+            QI { a: (-3).into(), b: (-1).into() },
+            QI { a: (-1).into(), b: 1.into() },
+            QI { a: 1.into(), b: 3.into() },
+        ]);
 
-		check(ideal, r"\left(-15,-1,0,1,21,-2\sqrt{-7},-\sqrt{-7},\sqrt{-7},2\sqrt{-7},-1-2\sqrt{-7},1-\sqrt{-7},2+\sqrt{-7},-2+2\sqrt{-7},\frac{3-3\sqrt{-7}}2,\frac{-3-\sqrt{-7}}2,\frac{-1+\sqrt{-7}}2,\frac{1+3\sqrt{-7}}2\right)");
+        check(ideal, r"\left(-15,-1,0,1,21,-2\sqrt{-7},-\sqrt{-7},\sqrt{-7},2\sqrt{-7},-1-2\sqrt{-7},1-\sqrt{-7},2+\sqrt{-7},-2+2\sqrt{-7},\frac{3-3\sqrt{-7}}2,\frac{-3-\sqrt{-7}}2,\frac{-1+\sqrt{-7}}2,\frac{1+3\sqrt{-7}}2\right)");
     }
 }
