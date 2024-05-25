@@ -1,0 +1,25 @@
+diff --git a/src/lib.rs b/src/lib.rs
+index b807fd2..b509dcd 100644
+--- a/src/lib.rs
++++ b/src/lib.rs
+@@ -222,6 +222,7 @@ impl<T> fmt::Display for TryFromBigIntError<T> {
+ 
+ pub use crate::biguint::BigUint;
+ pub use crate::biguint::ToBigUint;
++pub use crate::biguint::IntDigits;
+ pub use crate::biguint::U32Digits;
+ pub use crate::biguint::U64Digits;
+ 
+diff --git a/src/biguint.rs b/src/biguint.rs
+index 4150605..f745241 100644
+--- a/src/biguint.rs
++++ b/src/biguint.rs
+@@ -1071,7 +1071,7 @@ impl num_traits::ToBytes for BigUint {
+     }
+ }
+ 
+-pub(crate) trait IntDigits {
++pub trait IntDigits {
+     fn digits(&self) -> &[BigDigit];
+     fn digits_mut(&mut self) -> &mut Vec<BigDigit>;
+     fn normalize(&mut self);

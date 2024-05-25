@@ -1,0 +1,44 @@
+diff --git a/src/de.rs b/src/de.rs
+index c7774f6..5b896ef 100644
+--- a/src/de.rs
++++ b/src/de.rs
+@@ -4,7 +4,7 @@ use crate::error::{Error, ErrorCode, Result};
+ #[cfg(feature = "float_roundtrip")]
+ use crate::lexical;
+ use crate::number::Number;
+-use crate::read::{self, Fused, Reference};
++use crate::read::{self, Fused};
+ use alloc::string::String;
+ use alloc::vec::Vec;
+ #[cfg(feature = "float_roundtrip")]
+@@ -19,7 +19,7 @@ use serde::forward_to_deserialize_any;
+ #[cfg(feature = "arbitrary_precision")]
+ use crate::number::NumberDeserializer;
+ 
+-pub use crate::read::{Read, SliceRead, StrRead};
++pub use crate::read::{Read, Reference, SliceRead, StrRead};
+ 
+ #[cfg(feature = "std")]
+ #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
+diff --git a/src/error.rs b/src/error.rs
+index fbf9eb1..b6fb633 100644
+--- a/src/error.rs
++++ b/src/error.rs
+@@ -233,7 +233,7 @@ struct ErrorImpl {
+     column: usize,
+ }
+ 
+-pub(crate) enum ErrorCode {
++pub enum ErrorCode {
+     /// Catchall for syntax error messages
+     Message(Box<str>),
+ 
+@@ -312,7 +312,7 @@ pub(crate) enum ErrorCode {
+ 
+ impl Error {
+     #[cold]
+-    pub(crate) fn syntax(code: ErrorCode, line: usize, column: usize) -> Self {
++    pub fn syntax(code: ErrorCode, line: usize, column: usize) -> Self {
+         Error {
+             err: Box::new(ErrorImpl { code, line, column }),
+         }
