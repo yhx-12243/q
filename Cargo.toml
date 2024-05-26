@@ -14,7 +14,7 @@ compact_str = { version = "0.8.0-beta", features = ["serde"] }
 hashbrown = { version = "0.14.5", features = ["serde"] }
 num = { version = "0.4.3", features = ["rand"] }
 rand = { version = "0.8.5", features = ["log", "nightly"] }
-serde = { version = "1.0.202", features = ["derive"] }
+serde = { version = "1.0.203", features = ["derive"] }
 serde_json = { version = "1.0.117", features = ["float_roundtrip"] }
 smallvec = { version = "1.13.2", features = ["const_new", "may_dangle", "specialization", "union"] }
 

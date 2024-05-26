@@ -1,7 +1,4 @@
-use std::{
-    fmt::{Display, Formatter, Write},
-    str::FromStr,
-};
+use std::fmt::{Display, Formatter, Write};
 
 use num::{bigint::Sign, BigInt, BigUint, Integer, One, Signed, Zero};
 
@@ -58,7 +55,7 @@ impl QI {
         let mut changed = false;
         while !dot.is_zero() {
             let mut progress = false;
-            let qb = BigInt::from_biguint(dot.sign(), (dot.magnitude() + &nb / 2u32) / &nb);
+            let qb = BigInt::from_biguint(dot.sign(), (dot.magnitude() + (&nb - 1u32) / 2u32) / &nb);
             if !qb.is_zero() {
                 progress = true;
                 changed = true;
@@ -67,14 +64,14 @@ impl QI {
                 na = a.gaussian_norm();
                 dot -= BigInt::from_biguint(qb.sign(), &nb * qb.magnitude());
             }
-            let qa = BigInt::from_biguint(dot.sign(), (dot.magnitude() + &na / 2u32) / &na);
+            let qa = BigInt::from_biguint(dot.sign(), (dot.magnitude() + (&na - 1u32) / 2u32) / &na);
             if !qa.is_zero() {
                 progress = true;
                 changed = true;
                 b.a -= &a.a * &qa;
                 b.b -= &a.b * &qa;
                 nb = b.gaussian_norm();
-                dot -= BigInt::from_biguint(qb.sign(), &nb * qa.magnitude());
+                dot -= BigInt::from_biguint(qa.sign(), &na * qa.magnitude());
             }
             if !progress {
                 break;
@@ -133,6 +130,16 @@ impl QI {
             pre_norm / 4
         } else {
             pre_norm
+        }
+    }
+
+    pub fn common(&self) -> BigUint {
+        let e = discriminant::is4kp1();
+        let common = self.a.magnitude().gcd(self.b.magnitude());
+        if e && common.is_even() && self.a.trailing_zeros() != self.b.trailing_zeros() {
+            common / 2u32
+        } else {
+            common
         }
     }
 
@@ -218,18 +225,6 @@ impl From<BigInt> for QI {
         Self {
             a: n,
             b: BigInt::ZERO,
-        }
-    }
-}
-
-impl FromStr for QI {
-    type Err = anyhow::Error;
-
-    fn from_str(s: &str) -> anyhow::Result<Self> {
-        let e = discriminant::is4kp1();
-        match s.parse::<BigInt>() {
-            Ok(x) => Ok(if e { x * 2 } else { x }.into()),
-            Err(e) => Err(e.into()),
         }
     }
 }

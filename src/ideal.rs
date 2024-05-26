@@ -1,11 +1,13 @@
 use std::{
+    cmp::Ordering,
     fmt::{Display, Formatter},
+    io,
     str::FromStr,
 };
 
 use num::{
     bigint::{IntDigits, Sign},
-    BigInt, BigUint, Integer, One, Signed, Zero,
+    BigInt, BigUint, Integer, One, Zero,
 };
 use smallvec::{smallvec_inline, SmallVec};
 
@@ -15,6 +17,61 @@ use crate::{discriminant, factor::factor, pell, qi::QI, qr::quadratic_residue};
 #[repr(transparent)]
 pub struct Ideal(SmallVec<[QI; 2]>);
 
+fn extract<R>(input: &mut R) -> io::Result<Option<BigInt>>
+where
+    R: io::BufRead,
+{
+    #[inline]
+    const fn check(x: u8) -> bool {
+        x.is_ascii_digit() || x == b'-'
+    }
+
+    #[inline]
+    fn finalize(data: &[u8]) -> io::Result<Option<BigInt>> {
+        let data = unsafe { core::str::from_utf8_unchecked(data) };
+        match BigInt::from_str(data) {
+            Ok(i) => Ok(Some(i)),
+            Err(e) => Err(io::Error::other(e)),
+        }
+    }
+
+    let mut buf = Vec::new();
+
+    loop {
+        let available = match input.fill_buf() {
+            Ok(n) => n,
+            Err(ref e) if e.is_interrupted() => continue,
+            Err(e) => return Err(e),
+        };
+        if buf.is_empty() {
+            if let Some(pos) = available.iter().position(|x| check(*x)) {
+                let next = &available[pos..];
+                if let Some(right) = next.iter().position(|x| !check(*x)) {
+                    let ret = finalize(&next[..right]);
+                    input.consume(pos + right);
+                    return ret;
+                }
+                buf.extend_from_slice(next);
+            }
+        } else {
+            if !available.first().is_some_and(|x| check(*x)) {
+                return finalize(&buf);
+            }
+            if let Some(right) = available.iter().position(|x| !check(*x)) {
+                buf.extend_from_slice(&available[..right]);
+                input.consume(right);
+                return finalize(&buf);
+            }
+            buf.extend_from_slice(available);
+        }
+        if available.is_empty() {
+            return Ok(None);
+        }
+        let len = available.len();
+        input.consume(len);
+    }
+}
+
 impl Ideal {
     #[inline]
     pub const fn principal(x: QI) -> Self {
@@ -22,8 +79,8 @@ impl Ideal {
     }
 
     #[inline]
-    pub fn is_principal(&self) -> bool {
-        self.0.len() == 1
+    pub fn is_zero(&self) -> bool {
+        self.0.is_empty()
     }
 
     pub fn reduce(&mut self) {
@@ -133,7 +190,10 @@ impl Ideal {
             );
             let ideal = Self(smallvec_inline![
                 BigInt::from(q.clone()).into(),
-                QI { a: px, b: one.clone() }
+                QI {
+                    a: px,
+                    b: one.clone()
+                }
             ]);
             let ideal_ = Self(smallvec_inline![
                 BigInt::from(q).into(),
@@ -147,51 +207,119 @@ impl Ideal {
         }
     }
 
+    #[allow(clippy::too_many_lines)]
     pub fn factor(&mut self) -> anyhow::Result<Vec<(Self, u32)>> {
         self.reduce();
 
         let d = discriminant::get();
-        let e = d.get() & 3 == 1;
-        if let [x] = &*self.0 && x.b.is_zero() && x.a.is_positive() {
-            let n = x.a.magnitude();
-            let factors = if e { factor(&(n / 2u32)) } else { factor(n) }?;
-            let mut result = Vec::with_capacity(factors.len() * 2);
-            for (p, a) in factors {
-                let mut is = Self::factor_prime(&p);
-                let num = is.len();
-                unsafe { is.set_len(2) };
-                let [i1, i2] = is
-                    .into_inner()
-                    .map_err(|_| anyhow::anyhow!("wrong implementation of Ideal::factor_prime"))?;
 
-                match num {
-                    1 => result.push((i1, a)), // principal, skipped
-                    2 if i1 == i2 => result.push((
-                        if let Some(qi) = pell::work(d.get(), &p) {
-                            Self::principal(qi)
-                        } else {
-                            i1
-                        },
-                        2 * a,
-                    )),
-                    2 => {
-                        if let Some(qi) = pell::work(d.get(), &p) {
-                            let mut qj = qi.clone();
-                            qj.a = -qj.a;
-                            result.push((Self::principal(qi), a));
-                            result.push((Self::principal(qj), a));
-                        } else {
-                            result.push((i1, a));
-                            result.push((i2, a));
+        let mut common = match &mut *self.0 {
+            [q] => q.common(),
+            [q, r] => q.common().gcd(&r.common()),
+            _ => unsafe { core::hint::unreachable_unchecked() },
+        };
+
+        {
+            let common_ = BigInt::from(common);
+            for each in &mut self.0 {
+                each.a /= &common_;
+                each.b /= &common_;
+            }
+            common = common_.into_parts().1;
+        }
+
+        let norm = self.norm();
+
+        // eprintln!("common = {common}, remain = {self}, norm = {norm}");
+
+        let [common_factors, norm_factors] = factor([&common, &norm])?;
+        let mut common_factors = common_factors.iter().peekable();
+        let mut norm_factors = norm_factors.iter().peekable();
+
+        let mut result = Vec::with_capacity((common_factors.len() + norm_factors.len()) * 2);
+        loop {
+            let l = common_factors.peek();
+            let r = norm_factors.peek();
+            let (p, a1, a2) = if let Some(l) = l
+                && let Some(r) = r
+            {
+                match l.0.cmp(&r.0) {
+                    Ordering::Equal => {
+                        let (p, a1) = unsafe { common_factors.next().unwrap_unchecked() };
+                        let (_, a2) = unsafe { norm_factors.next().unwrap_unchecked() };
+                        (p, *a1, *a2)
+                    }
+                    Ordering::Less => {
+                        let (p, a) = unsafe { common_factors.next().unwrap_unchecked() };
+                        (p, *a, 0)
+                    }
+                    Ordering::Greater => {
+                        let (p, a) = unsafe { norm_factors.next().unwrap_unchecked() };
+                        (p, 0, *a)
+                    }
+                }
+            } else if let Some((p, a)) = common_factors.next() {
+                (p, *a, 0)
+            } else if let Some((p, a)) = norm_factors.next() {
+                (p, 0, *a)
+            } else {
+                break;
+            };
+
+            let mut is = Self::factor_prime(p);
+            let num = is.len();
+            unsafe { is.set_len(2) };
+            let [mut i1, mut i2] = is
+                .into_inner()
+                .map_err(|_| anyhow::anyhow!("wrong implementation of Ideal::factor_prime"))?;
+
+            // eprintln!("processing {p} {a1} {a2}");
+
+            match num {
+                1 => {
+                    if a2 != 0 {
+                        anyhow::bail!("contradiction on prime {p} (kind 1)");
+                    }
+                    // principal, skipped
+                    result.push((i1, a1));
+                }
+                2 if i1 == i2 => {
+                    if a2 > 1 {
+                        anyhow::bail!("contradiction on prime {p} (kind 2)");
+                    }
+                    if let Some(qi) = pell::work(d.get(), p) {
+                        i1 = Self::principal(qi);
+                    }
+                    result.push((i1, 2 * a1 + a2));
+                }
+                2 => {
+                    if let Some(qi) = pell::work(d.get(), p) {
+                        let mut qj = qi.clone();
+                        qj.a = -qj.a;
+                        i1 = Self::principal(qi);
+                        i2 = Self::principal(qj);
+                    }
+                    if a2 == 0 {
+                        result.push((i1, a1));
+                        result.push((i2, a1));
+                    } else {
+                        match (self.is_multiple_of(&i1), self.is_multiple_of(&i2)) {
+                            (true, false) => {
+                                result.push((i1, a1 + a2));
+                                if a1 != 0 { result.push((i2, a1)); }
+                            }
+                            (false, true) => {
+                                if a1 != 0 { result.push((i1, a1)); }
+                                result.push((i2, a1 + a2));
+                            }
+                            (x, y) => anyhow::bail!("contradiction on prime {p} (kind 3) : ({x}, {y})"),
                         }
                     }
-                    _ => anyhow::bail!("unknown factor_prime error"),
                 }
+                _ => anyhow::bail!("unknown factor_prime error"),
             }
-            Ok(result)
-        } else {
-            unimplemented!()
         }
+        Ok(result)
     }
 
     pub fn latex(&self, f: &mut Formatter<'_>) {
@@ -204,6 +332,37 @@ impl Ideal {
         }
         let _ = f.write_str("\\right)");
     }
+
+    pub fn read<R>(mut input: R) -> io::Result<Self>
+    where
+        R: io::BufRead,
+    {
+        let e = discriminant::is4kp1();
+        let mut qis = SmallVec::new_const();
+        let mut last: Option<BigInt> = None;
+
+        while let Some(cur) = extract(&mut input)? {
+            if let Some(last) = last.take() {
+                if e && last.is_even() ^ cur.is_even() {
+                    return Err(io::Error::other("not a integer".to_owned()));
+                }
+                if !(last.is_zero() && cur.is_zero()) {
+                    qis.push(QI { a: last, b: cur });
+                }
+            } else {
+                last = Some(cur);
+            }
+        }
+
+        if last.is_some() {
+            Err(io::Error::new(
+                io::ErrorKind::UnexpectedEof,
+                "odd number of integers were inputted".to_owned(),
+            ))
+        } else {
+            Ok(Self(qis))
+        }
+    }
 }
 
 impl Display for Ideal {
@@ -213,14 +372,6 @@ impl Display for Ideal {
             builder.field_with(|f| qi.fmt(f));
         }
         builder.finish()
-    }
-}
-
-impl FromStr for Ideal {
-    type Err = anyhow::Error;
-
-    fn from_str(s: &str) -> anyhow::Result<Self> {
-        s.parse().map(Self::principal)
     }
 }
 

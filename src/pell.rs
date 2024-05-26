@@ -185,7 +185,7 @@ fn solve_by_convergents_QIN(
     let mut hash = HashSet::with_capacity(empirical);
     let mut qs = Vec::with_capacity(empirical);
     let mut indices = Vec::with_capacity(empirical);
-    loop {
+    for _ in 0..4096 {
         let q = (&x.a + (D_sqrt + x.b.is_negative() as u64)).magnitude() / x.b.magnitude();
 
         let q_ = mod_2_64(&q);
@@ -222,6 +222,7 @@ fn solve_by_convergents_QIN(
 
         qs.push(q_.into_parts().1);
     }
+    None // just abort the computation.
 }
 
 /// Solve x^2 + D y^2 = p.

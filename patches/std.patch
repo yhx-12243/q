@@ -1,0 +1,15 @@
+diff --git a/src/io/error.rs b/src/io/error.rs
+index f366cb8..9939148 100644
+--- a/src/io/error.rs
++++ b/src/io/error.rs
+@@ -980,8 +980,9 @@ impl Error {
+         }
+     }
+ 
++    #[unstable(feature = "io_error_more", issue = "none")]
+     #[inline]
+-    pub(crate) fn is_interrupted(&self) -> bool {
++    pub fn is_interrupted(&self) -> bool {
+         match self.repr.data() {
+             ErrorData::Os(code) => sys::is_interrupted(code),
+             ErrorData::Custom(c) => c.kind == ErrorKind::Interrupted,

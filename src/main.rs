@@ -1,9 +1,13 @@
 #![feature(
+    array_try_map,
     debug_closure_helpers,
+    exact_size_is_empty,
     fmt_helpers_for_derive,
     fmt_internals,
     get_many_mut,
+    io_error_more,
     isqrt,
+    iter_next_chunk,
     let_chains,
     raw_ref_op,
     slice_ptr_get,
@@ -17,27 +21,43 @@ mod pell;
 mod qi;
 mod qr;
 
-use core::num::NonZeroI64;
-
-use ideal::Ideal;
-
 #[derive(clap::Parser)]
 struct Args {
-    #[arg(short = 'D', value_name = "discriminant")]
-    D: NonZeroI64,
-    #[arg(short, long, value_name = "input")]
-    input: String,
+    #[arg(
+        short = 'D',
+        value_name = "discriminant",
+        help = "The discriminant of the quadratic integer domain"
+    )]
+    D: core::num::NonZeroI64,
+    #[arg(
+        long,
+        default_value = "../data/factor",
+        value_name = "dir",
+        help = "The directory of YAFU output"
+    )]
+    dir: std::path::PathBuf,
 }
+
+static YAFU_DIR: std::sync::OnceLock<std::path::PathBuf> = std::sync::OnceLock::new();
 
 fn main() -> anyhow::Result<()> {
     use clap::Parser;
+    use ideal::Ideal;
 
     let args = Args::parse();
     unsafe { discriminant::set(args.D)? };
 
-    let mut ideal = args.input.parse::<Ideal>()?;
+    std::fs::create_dir_all(&args.dir)?;
+    let _ = YAFU_DIR.set(args.dir);
 
-    let ideals = ideal.factor()?;
+    let mut ideal = Ideal::read(std::io::stdin().lock())?;
+
+    if ideal.is_zero() {
+        print!("\\left(0\\right)=\\left(0\\right)");
+        return Ok(());
+    }
+
+    ideal.reduce();
 
     {
         use core::fmt::{rt::Argument, Arguments, Formatter};
@@ -48,12 +68,19 @@ fn main() -> anyhow::Result<()> {
             Ok(ideal.latex(fmt))
         }
 
-        let mut stdout = std::io::stdout();
+        let mut stdout = std::io::stdout().lock();
         stdout.write_fmt(Arguments::new_v1(
             &[""],
             &[Argument::new(&ideal, latex_wrapper)],
         ))?;
         stdout.write_all(b"=")?;
+
+        let ideals = ideal.factor()?;
+
+        if ideals.is_empty() {
+            write!(stdout, "\\left(1\\right)")?;
+        }
+
         for (ideal, exp) in ideals {
             stdout.write_fmt(Arguments::new_v1(
                 &[""],
