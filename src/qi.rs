@@ -154,16 +154,16 @@ impl QI {
         }
     }
 
-    pub fn latex(&self, f: &mut Formatter<'_>) {
+    pub fn latex(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let e = discriminant::is4kp1();
         let s = discriminant::get_latex();
         if self.b.is_zero() {
-            let _ = if e {
+            if e {
                 let a: BigInt = &self.a / 2;
                 a.fmt(f)
             } else {
                 self.a.fmt(f)
-            };
+            }
         } else if self.a.is_zero() {
             let b_: BigInt;
             let b = if e {
@@ -173,15 +173,15 @@ impl QI {
                 &self.b
             };
             if !b.magnitude().is_one() {
-                let _ = b.fmt(f);
+                b.fmt(f)?;
             } else if b.is_negative() {
-                let _ = f.write_char('-');
+                f.write_char('-')?;
             }
-            let _ = f.write_str(s);
+            f.write_str(s)
         } else {
             let div2 = e && self.a.is_odd();
             if div2 {
-                let _ = f.write_str("\\frac{");
+                f.write_str("\\frac{")?;
             }
             let (a_, b_): (BigInt, BigInt);
             let (a, b) = if e && !self.a.is_odd() {
@@ -191,16 +191,17 @@ impl QI {
             } else {
                 (&self.a, &self.b)
             };
-            let _ = a.fmt(f);
+            a.fmt(f)?;
             if b.magnitude().is_one() {
-                let _ = f.write_char(if b.is_negative() { '-' } else { '+' });
+                f.write_char(if b.is_negative() { '-' } else { '+' })?;
             } else {
-                let _ = write!(f, "{b:+}");
+                write!(f, "{b:+}")?;
             }
-            let _ = f.write_str(s);
+            f.write_str(s)?;
             if div2 {
-                let _ = f.write_str("}2");
+                f.write_str("}2")?;
             }
+            Ok(())
         }
     }
 }

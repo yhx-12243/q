@@ -322,15 +322,15 @@ impl Ideal {
         Ok(result)
     }
 
-    pub fn latex(&self, f: &mut Formatter<'_>) {
-        let _ = f.write_str("\\left(");
+    pub fn latex(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.write_str("\\left(")?;
         let mut maybe_comma = "";
         for qi in &self.0 {
-            let _ = f.write_str(maybe_comma);
-            qi.latex(f);
+            f.write_str(maybe_comma)?;
+            qi.latex(f)?;
             maybe_comma = ",";
         }
-        let _ = f.write_str("\\right)");
+        f.write_str("\\right)")
     }
 
     pub fn read<R>(mut input: R) -> io::Result<Self>
