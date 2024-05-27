@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import hashlib
+import requests
 from argparse import ArgumentParser
 from enum import Enum
 from pathlib import Path
@@ -11,6 +12,7 @@ def parse_args():
     parser = ArgumentParser()
     parser.add_argument('--cargo-path', help='Cargo path of your system (default: ~/.cargo)', type=Path, default=Path.home() / '.cargo')
     parser.add_argument('--rustup-path', help='Rustup path of your system (default: ~/.rustup)', type=Path, default=Path.home() / '.rustup')
+    parser.add_argument('--std-patch-server', help='Server to download std patch which updates frequently (default: https://43.138.56.99/rust-std-patches/)', default='https://43.138.56.99/rust-std-patches/')
     return parser.parse_args()
 
 STD = ['core', 'alloc', 'std']
@@ -133,6 +135,16 @@ def main():
     except:
         pass
 
+    if args.std_patch_server:
+        for std in STD:
+            print(f'\x1b[35m======== Downloading \x1b[1;34m{std}\x1b[35m ========\x1b[0m\n')
+            url = args.std_patch_server + ('' if args.std_patch_server.endswith('/') else '/') + std + '.patch'
+            res = requests.get(url)
+            with open(patches / f'{std}.patch', 'wb') as f:
+                for chunk in res.iter_content(chunk_size=65536):
+                    if chunk:
+                        f.write(chunk)
+
     responses = []
     need_fetch = False
     for patch in patches.iterdir():
@@ -160,7 +172,7 @@ def main():
             case PatchStatus.PATCHED:
                 print('\x1b[1;32m√\x1b[0m')
             case PatchStatus.DISCARD:
-                print(f'std package {path.name} is broken, discarded')
+                print(f'std package {path.name} is broken, discarded \x1b[1;33m(please use the NEWEST NIGHTLY version of Rust)\x1b[0m')
             case _:
                 run(['git', '-C', str(path), 'apply', '--reject', str(patch)])
         print()
