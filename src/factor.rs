@@ -1,15 +1,11 @@
+use nix::{ sys::signal::{kill, signal, SigHandler, Signal}, unistd::Pid};
 use num::{BigUint, One};
 use serde::Deserialize;
 use std::{
     collections::{
         btree_map::Entry::{Occupied, Vacant},
         BTreeMap,
-    },
-    fs,
-    io::{BufRead, BufReader, Write},
-    path::PathBuf,
-    process::{Command, Stdio},
-    time::{Duration, Instant},
+    }, fs, io::{BufRead, BufReader, Write}, path::PathBuf, process::{Command, Stdio}, sync::atomic::{AtomicI32, Ordering}, time::{Duration, Instant}
 };
 
 use crate::YAFU_DIR;
@@ -26,6 +22,13 @@ impl Drop for DropGuard {
 struct YafuOutput {
     #[serde(rename = "factors-prime")]
     factors: Vec<String>,
+}
+
+static CHILD_PID: AtomicI32 = AtomicI32::new(0);
+
+extern "C" fn handler(_signal: i32) {
+    let child_pid = CHILD_PID.load(Ordering::Acquire);
+    let _ = kill(Pid::from_raw(child_pid), Signal::SIGTERM);
 }
 
 /// factor the product of ns, take advantage of the known product.
@@ -60,7 +63,16 @@ pub fn factor<const N: usize>(ns: [&BigUint; N]) -> anyhow::Result<[Vec<(BigUint
             writeln!(stdin, "{n}")?;
         }
     }
-    child.wait()?;
+
+    let r = unsafe {
+        CHILD_PID.store(child.id() as i32, Ordering::Release);
+        signal(Signal::SIGTERM, SigHandler::Handler(handler))?;
+        let r = child.wait()?;
+        signal(Signal::SIGTERM, SigHandler::SigDfl)?;
+        r
+    };
+
+    r.exit_ok()?;
 
     let file = fs::File::open(&path)?;
 

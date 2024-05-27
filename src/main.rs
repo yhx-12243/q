@@ -2,6 +2,7 @@
     array_try_map,
     debug_closure_helpers,
     exact_size_is_empty,
+    exit_status_error,
     fmt_helpers_for_derive,
     fmt_internals,
     get_many_mut,
