@@ -1,9 +1,4 @@
-use std::{
-    cmp::Ordering,
-    fmt::{Display, Formatter},
-    io,
-    str::FromStr,
-};
+use std::{cmp::Ordering, fmt::Formatter, io, str::FromStr};
 
 use num::{
     bigint::{IntDigits, Sign},
@@ -190,14 +185,11 @@ impl Ideal {
             );
             let ideal = Self(smallvec_inline![
                 BigInt::from(q.clone()).into(),
-                QI {
-                    a: px,
-                    b: one.clone()
-                }
+                QI { a: px, b: one.clone() },
             ]);
             let ideal_ = Self(smallvec_inline![
                 BigInt::from(q).into(),
-                QI { a: nx, b: one }
+                QI { a: nx, b: one },
             ]);
             smallvec_inline![ideal, ideal_]
         } else {
@@ -211,11 +203,11 @@ impl Ideal {
     pub fn factor(&mut self) -> anyhow::Result<Vec<(Self, u32)>> {
         self.reduce();
 
-        let d = discriminant::get();
-
         let mut common = match &mut *self.0 {
+            [] => return Ok(vec![(Self::default(), 1)]), // zero ideal
             [q] => q.common(),
             [q, r] => q.common().gcd(&r.common()),
+            // SAFETY: we already reduced before
             _ => unsafe { core::hint::unreachable_unchecked() },
         };
 
@@ -227,6 +219,8 @@ impl Ideal {
             }
             common = common_.into_parts().1;
         }
+
+        let d = discriminant::get();
 
         let norm = self.norm();
 
@@ -240,9 +234,7 @@ impl Ideal {
         loop {
             let l = common_factors.peek();
             let r = norm_factors.peek();
-            let (p, a1, a2) = if let Some(l) = l
-                && let Some(r) = r
-            {
+            let (p, a1, a2) = if let Some(l) = l && let Some(r) = r {
                 match l.0.cmp(&r.0) {
                     Ordering::Equal => {
                         let (p, a1) = unsafe { common_factors.next().unwrap_unchecked() };
@@ -324,11 +316,15 @@ impl Ideal {
 
     pub fn latex(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.write_str("\\left(")?;
-        let mut maybe_comma = "";
-        for qi in &self.0 {
-            f.write_str(maybe_comma)?;
-            qi.latex(f)?;
-            maybe_comma = ",";
+        if self.is_zero() {
+            f.write_str("0")?;
+        } else {
+            let mut maybe_comma = "";
+            for qi in &self.0 {
+                f.write_str(maybe_comma)?;
+                qi.latex(f)?;
+                maybe_comma = ",";
+            }
         }
         f.write_str("\\right)")
     }
@@ -365,7 +361,7 @@ impl Ideal {
     }
 }
 
-impl Display for Ideal {
+impl core::fmt::Display for Ideal {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let mut builder = f.debug_tuple("");
         for qi in &self.0 {
@@ -388,7 +384,7 @@ mod tests {
     fn check(ideal: Ideal, s: &str) {
         let mut t = String::new();
         let mut fmt = core::fmt::Formatter::new(&mut t);
-        ideal.latex(&mut fmt);
+        ideal.latex(&mut fmt).unwrap();
         assert_eq!(s, t);
     }
 

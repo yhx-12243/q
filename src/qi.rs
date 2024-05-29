@@ -211,13 +211,12 @@ impl Display for QI {
         let e = discriminant::is4kp1();
         let s = discriminant::get_str();
         if !e {
-            write!(f, "{}{:+}{s}", self.a, self.b)?;
+            write!(f, "{}{:+}{s}", self.a, self.b)
         } else if self.a.is_odd() {
-            write!(f, "{}.5{:+}.5{s}", &self.a / 2, &self.b / 2)?;
+            write!(f, "{}.5{:+}.5{s}", &self.a / 2, &self.b / 2)
         } else {
-            write!(f, "{}{:+}{s}", &self.a / 2, &self.b / 2)?;
+            write!(f, "{}{:+}{s}", &self.a / 2, &self.b / 2)
         }
-        Ok(())
     }
 }
 
@@ -241,7 +240,7 @@ mod tests {
     fn check(qi: QI, s: &str) {
         let mut t = String::new();
         let mut fmt = core::fmt::Formatter::new(&mut t);
-        qi.latex(&mut fmt);
+        qi.latex(&mut fmt).unwrap();
         assert_eq!(s, t);
     }
 

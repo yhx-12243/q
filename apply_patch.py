@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 
-import hashlib
-import requests
 from argparse import ArgumentParser
 from enum import Enum
+from hashlib import sha1
+from os import unlink
 from pathlib import Path
-from shutil import rmtree
+from requests import get
+from shutil import move, rmtree
 from subprocess import run
+from tempfile import NamedTemporaryFile
 
 def parse_args():
     parser = ArgumentParser()
@@ -45,7 +47,7 @@ def patch_inner(patch, path, is_std=False):
                 ct = f.read()
         except FileNotFoundError:
             return ha.count('0') == len(ha)
-        h = hashlib.sha1()
+        h = sha1()
         ct = ct.encode()
         h.update(f'blob {len(ct)}'.encode())
         h.update(b'\0')
@@ -139,11 +141,24 @@ def main():
         for std in STD:
             print(f'\x1b[35m======== Downloading \x1b[1;34m{std}\x1b[35m ========\x1b[0m\n')
             url = args.std_patch_server + ('' if args.std_patch_server.endswith('/') else '/') + std + '.patch'
-            res = requests.get(url)
-            with open(patches / f'{std}.patch', 'wb') as f:
-                for chunk in res.iter_content(chunk_size=65536):
-                    if chunk:
-                        f.write(chunk)
+            delete = None
+            try:
+                res = get(url)
+                target = patches / f'{std}.patch'
+                with NamedTemporaryFile(delete=False) as f:
+                    delete = f.name
+                    for chunk in res.iter_content(chunk_size=65536):
+                        if chunk:
+                            f.write(chunk)
+                move(f.name, target)
+                delete = None
+            except Exception as e:
+                print('\x1b[1;31mfetch failed:\x1b[0m', e)
+            if delete:
+                try:
+                    unlink(delete)
+                except Exception as e:
+                    pass
 
     responses = []
     need_fetch = False

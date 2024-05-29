@@ -23,6 +23,10 @@ mod qi;
 mod qr;
 
 #[derive(clap::Parser)]
+#[command(
+    version,
+    about = "ideal unique factorization of quadratic integer domains"
+)]
 struct Args {
     #[arg(
         short = 'D',
@@ -32,7 +36,7 @@ struct Args {
     D: core::num::NonZeroI64,
     #[arg(
         long,
-        default_value = "../data/factor",
+        default_value = "./",
         value_name = "dir",
         help = "The directory of YAFU output"
     )]
@@ -53,11 +57,6 @@ fn main() -> anyhow::Result<()> {
 
     let mut ideal = Ideal::read(std::io::stdin().lock())?;
 
-    if ideal.is_zero() {
-        print!("\\left(0\\right)=\\left(0\\right)");
-        return Ok(());
-    }
-
     ideal.reduce();
 
     {
@@ -73,7 +72,7 @@ fn main() -> anyhow::Result<()> {
         let ideals = ideal.factor()?;
 
         if ideals.is_empty() {
-            write!(stdout, "\\left(1\\right)")?;
+            stdout.write_all(b"\\left(1\\right)")?;
         }
 
         for (ideal, exp) in ideals {
@@ -82,7 +81,7 @@ fn main() -> anyhow::Result<()> {
                 &[Argument::new(&ideal, Ideal::latex)],
             ))?;
             if exp > 1 {
-                write!(stdout, "^{exp}")?;
+                write!(stdout, "^{{{exp}}}")?;
             }
         }
     }
