@@ -6,6 +6,7 @@
     fmt_helpers_for_derive,
     fmt_internals,
     get_many_mut,
+    hint_assert_unchecked,
     io_error_more,
     isqrt,
     iter_next_chunk,

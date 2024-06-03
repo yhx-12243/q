@@ -2,15 +2,16 @@ cargo-features = ["edition2024"]
 
 [package]
 name = "q"
-version = "1.1.1"
+version = "1.1.2"
+authors = ["jkjkmxmx <yhx12243@gmail.com>"]
 edition = "2024"
-links = "gmp"
+description = "Implementation of ideal unique factorization of quadratic integer domains"
+repository = "https://github.com/yhx-12243/q"
 
 [dependencies]
 anyhow = { version = "1.0.86", features = ["backtrace"] }
 clap = { version = "4.5.4", features = ["derive", "unicode", "wrap_help", "env", "string", "unstable-v5"] }
 clap_derive = { version = "4.5.4", features = ["unstable-v5"] }
-compact_str = { version = "0.8.0-beta", features = ["serde"] }
 hashbrown = { version = "0.14.5", features = ["serde"] }
 nix = { version = "0.29.0", features = ["signal"] }
 num = { version = "0.4.3", features = ["rand"] }

@@ -34,35 +34,33 @@ struct Mat2By2 {
     d: BigUint,
 }
 
-/// inner method of divide & conquer.
-fn convergent_inner(qs: &[BigUint]) -> Mat2By2 {
+/// matrix multiplication.
+#[allow(clippy::suspicious_operation_groupings)]
+fn matmul(lhs: &mut Mat2By2, rhs: &Mat2By2) {
+    lhs.a = &lhs.a * &rhs.a + &lhs.b * &rhs.c;
+    lhs.b = &lhs.a * &rhs.b + &lhs.b * &rhs.d;
+    lhs.c = &lhs.c * &rhs.a + &lhs.d * &rhs.c;
+    lhs.d = &lhs.c * &rhs.b + &lhs.d * &rhs.d;
+}
+
+/// inner method of divide & conquer (qs should not be empty)
+unsafe fn convergent_inner(qs: &[BigUint]) -> Mat2By2 {
+    unsafe { core::hint::assert_unchecked(!qs.is_empty()); }
     if qs.len() == 1 {
-        return Mat2By2 {
+        Mat2By2 {
             a: qs[0].clone(),
             b: BigUint::one(),
             c: BigUint::one(),
             d: BigUint::ZERO,
-        };
+        }
+    } else {
+        unsafe {
+            let (l, r) = qs.split_at_unchecked(qs.len() / 2);
+            let mut ret = convergent_inner(l);
+            matmul(&mut ret, &convergent_inner(r));
+            ret
+        }
     }
-
-    let (left, right) = unsafe { qs.split_at_unchecked(qs.len() / 2) };
-    let left = convergent_inner(left);
-    let right = convergent_inner(right);
-
-    // clippy is so stupid to discover that it is a matrix multiplication.
-    #[allow(clippy::suspicious_operation_groupings)]
-    Mat2By2 {
-        a: &left.a * &right.a + &left.b * &right.c,
-        b: &left.a * &right.b + &left.b * &right.d,
-        c: &left.c * &right.a + &left.d * &right.c,
-        d: &left.c * &right.b + &left.d * &right.d,
-    }
-}
-
-/// generate convergents of given continued fraction.
-fn convergent(qs: &[BigUint]) -> (BigUint, BigUint) {
-    let mat = convergent_inner(qs);
-    (mat.a, mat.c)
 }
 
 /// solve P x^2 - Q x y + R y^2 where P, R = 0, 1 (R can't be zero).
@@ -109,7 +107,7 @@ fn solve_by_convergents(
 
     let empirical = (x.len() + y.len() + 5) * 2;
     let mut qs = Vec::with_capacity(empirical);
-    let mut indices = Vec::with_capacity(empirical);
+    let mut mat = Mat2By2 { a: BigUint::one(), b: BigUint::ZERO, c: BigUint::ZERO, d: BigUint::one() };
     loop {
         let (q, r) = x.div_rem(&y);
 
@@ -120,16 +118,14 @@ fn solve_by_convergents(
         qs.push(q);
 
         if (ccx * (ccx * P_ - ccy * Q_) + ccy * ccy * R_).0 == 1 {
-            indices.push(qs.len());
+            matmul(&mut mat, unsafe { &convergent_inner(&qs) });
+            if &mat.a * &mat.a * P + &mat.c * &mat.c * R == &mat.a * &mat.c * Q + 1u32 {
+                return Some((mat.a, mat.c));
+            }
+            qs.clear();
         }
 
         if r.is_zero() {
-            for index in indices {
-                let (x, y) = convergent(unsafe { qs.get_unchecked(..index) });
-                if &x * &x * P + &y * &y * R == &x * &y * Q + 1u32 {
-                    return Some((x, y));
-                }
-            }
             return None;
         }
 
@@ -184,7 +180,7 @@ fn solve_by_convergents_QIN(
     let empirical = ((D.ilog2() + 5) * 2) as usize;
     let mut hash = HashSet::with_capacity(empirical);
     let mut qs = Vec::with_capacity(empirical);
-    let mut indices = Vec::with_capacity(empirical);
+    let mut mat = Mat2By2 { a: BigUint::one(), b: BigUint::ZERO, c: BigUint::ZERO, d: BigUint::one() };
     loop {
         let q = (&x.a + (D_sqrt + x.b.is_negative() as u64)).magnitude() / x.b.magnitude();
 
@@ -192,35 +188,33 @@ fn solve_by_convergents_QIN(
         ccx += cx * q_;
         ccy += cy * q_;
 
+        let q_s = BigInt::from(q);
+        let x_c = x.clone();
+        x.a -= &x.b * &q_s;
+        x.b = (D - &x.a * &x.a) / &x.b;
+        x.a = -x.a;
+
+        qs.push(q_s.into_parts().1);
+
         let trial = ccx * (ccx * P_ - ccy * Q_) + ccy * ccy * R_;
         if trial.0 == 1 || trial.0 == u64::MAX {
-            indices.push(qs.len() + 1);
+            matmul(&mut mat, unsafe { &convergent_inner(&qs) });
+            let x = BigInt::from(mat.a);
+            let trial = &x * (&x * P - BigInt::from(&mat.c * Q)) + BigInt::from(&mat.c * &mat.c * R);
+            mat.a = x.into_parts().1;
+            if trial.magnitude().is_one() {
+                return Some((/* trial.is_negative(), */ mat.a, mat.c));
+            }
+            qs.clear();
         }
 
-        if !hash.insert(x.clone()) || hash.len() > 4096 {
-            qs.push(q);
-
-            // println!("duplicate at {} tries, indices = {indices:?}", hash.len());
-            for index in indices {
-                let (x, y) = convergent(unsafe { qs.get_unchecked(..index) });
-                let x = BigInt::from(x);
-                let trial = &x * (&x * P - BigInt::from(&y * Q)) + BigInt::from(&y * &y * R);
-                if trial.magnitude().is_one() {
-                    return Some((/* trial.is_negative(), */ x.into_parts().1, y));
-                }
-            }
+        if !hash.insert(x_c) || hash.len() > 10240 {
+            // println!("duplicate at {} tries", hash.len());
             return None;
         }
 
         core::mem::swap(&mut cx, &mut ccx);
         core::mem::swap(&mut cy, &mut ccy);
-
-        let q_ = BigInt::from(q);
-        x.a -= &x.b * &q_;
-        x.b = (D - &x.a * &x.a) / &x.b;
-        x.a = -x.a;
-
-        qs.push(q_.into_parts().1);
     }
 }
 

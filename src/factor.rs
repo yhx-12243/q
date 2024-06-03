@@ -5,6 +5,7 @@ use nix::{
 use num::{BigUint, One};
 use serde::Deserialize;
 use std::{
+    borrow::Cow,
     collections::{
         btree_map::Entry::{Occupied, Vacant},
         BTreeMap,
@@ -28,9 +29,9 @@ impl Drop for DropGuard {
 }
 
 #[derive(Deserialize)]
-struct YafuOutput {
-    #[serde(rename = "factors-prime")]
-    factors: Vec<String>,
+struct YafuOutput<'a> {
+    #[serde(borrow, rename = "factors-prime")]
+    factors: Vec<Cow<'a, str>>,
 }
 
 static CHILD_PID: AtomicI32 = AtomicI32::new(0);
