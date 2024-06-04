@@ -6,7 +6,7 @@ use num::{
     BigInt, BigUint, Integer, One, Signed, Zero,
 };
 
-use crate::{qi::QI, qr::quadratic_residue};
+use crate::{qi::QI, qr::quadratic_residue, CONFIG};
 
 #[inline]
 fn mod_2_64_signed(x: &BigInt) -> Wrapping<u64> {
@@ -35,12 +35,19 @@ struct Mat2By2 {
 }
 
 /// matrix multiplication.
-#[allow(clippy::suspicious_operation_groupings)]
 fn matmul(lhs: &mut Mat2By2, rhs: &Mat2By2) {
-    lhs.a = &lhs.a * &rhs.a + &lhs.b * &rhs.c;
-    lhs.b = &lhs.a * &rhs.b + &lhs.b * &rhs.d;
-    lhs.c = &lhs.c * &rhs.a + &lhs.d * &rhs.c;
-    lhs.d = &lhs.c * &rhs.b + &lhs.d * &rhs.d;
+    let ab = &lhs.a * &rhs.b;
+    let bc = &lhs.b * &rhs.c;
+    let cb = &lhs.c * &rhs.b;
+    let dc = &lhs.d * &rhs.c;
+    lhs.a *= &rhs.a;
+    lhs.a += bc;
+    lhs.b *= &rhs.d;
+    lhs.b += ab;
+    lhs.c *= &rhs.a;
+    lhs.c += dc;
+    lhs.d *= &rhs.d;
+    lhs.d += cb;
 }
 
 /// inner method of divide & conquer (qs should not be empty)
@@ -179,6 +186,7 @@ fn solve_by_convergents_QIN(
 
     let empirical = ((D.ilog2() + 5) * 2) as usize;
     let mut hash = HashSet::with_capacity(empirical);
+    let max_iter = CONFIG.get().map_or(10240, |config| config.max_iter);
     let mut qs = Vec::with_capacity(empirical);
     let mut mat = Mat2By2 { a: BigUint::one(), b: BigUint::ZERO, c: BigUint::ZERO, d: BigUint::one() };
     loop {
@@ -208,7 +216,7 @@ fn solve_by_convergents_QIN(
             qs.clear();
         }
 
-        if !hash.insert(x_c) || hash.len() > 10240 {
+        if !hash.insert(x_c) || hash.len() > max_iter {
             // println!("duplicate at {} tries", hash.len());
             return None;
         }

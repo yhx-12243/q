@@ -61,17 +61,23 @@ index 4150605..7e68143 100644
      fn digits_mut(&mut self) -> &mut Vec<BigDigit>;
      fn normalize(&mut self);
 diff --git a/src/lib.rs b/src/lib.rs
-index b807fd2..cefa944 100644
+index b807fd2..be5818e 100644
 --- a/src/lib.rs
 +++ b/src/lib.rs
-@@ -222,8 +222,10 @@ impl<T> fmt::Display for TryFromBigIntError<T> {
+@@ -222,6 +222,7 @@ impl<T> fmt::Display for TryFromBigIntError<T> {
  
  pub use crate::biguint::BigUint;
  pub use crate::biguint::ToBigUint;
 +pub use crate::biguint::IntDigits;
  pub use crate::biguint::U32Digits;
  pub use crate::biguint::U64Digits;
-+pub use crate::biguint::mac3;
  
- pub use crate::bigint::BigInt;
+@@ -229,6 +230,8 @@ pub use crate::bigint::BigInt;
  pub use crate::bigint::Sign;
+ pub use crate::bigint::ToBigInt;
+ 
++pub use crate::biguint::mac3;
++
+ #[cfg(feature = "rand")]
+ pub use crate::bigrand::{RandBigInt, RandomBits, UniformBigInt, UniformBigUint};
+ 

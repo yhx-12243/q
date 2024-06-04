@@ -18,7 +18,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use crate::YAFU_DIR;
+use crate::CONFIG;
 
 struct DropGuard(PathBuf);
 
@@ -53,9 +53,9 @@ pub fn factor<const N: usize>(ns: [&BigUint; N]) -> anyhow::Result<[Vec<(BigUint
     let t1 = std::time::Instant::now();
     #[allow(clippy::transmute_undefined_repr)]
     let td = unsafe { std::mem::transmute::<Instant, Duration>(t1) };
-    let mut path = YAFU_DIR
+    let mut path = CONFIG
         .get()
-        .map_or_else(|| PathBuf::from("./"), PathBuf::clone);
+        .map_or_else(|| PathBuf::from("./"), |config| config.dir.clone());
     path.push(format!("q{}.json", td.as_nanos()));
     let mut child = Command::new("yafu")
         .arg("factor(@)")

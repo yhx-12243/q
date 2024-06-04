@@ -31,6 +31,7 @@ mod qr;
 struct Args {
     #[arg(
         short = 'D',
+        visible_alias = "discriminant",
         value_name = "discriminant",
         help = "The discriminant of the quadratic integer domain"
     )]
@@ -42,9 +43,17 @@ struct Args {
         help = "The directory of YAFU output"
     )]
     dir: std::path::PathBuf,
+    #[arg(
+        short = 'M',
+        long,
+        default_value_t = 10240,
+        value_name = "number",
+        help = "Max number of continuous fraction iteration to solve Pell equation/check for principal ideals"
+    )]
+    max_iter: usize,
 }
 
-static YAFU_DIR: std::sync::OnceLock<std::path::PathBuf> = std::sync::OnceLock::new();
+static CONFIG: std::sync::OnceLock<Args> = std::sync::OnceLock::new();
 
 fn main() -> anyhow::Result<()> {
     use clap::Parser;
@@ -54,7 +63,7 @@ fn main() -> anyhow::Result<()> {
     unsafe { discriminant::set(args.D)? };
 
     std::fs::create_dir_all(&args.dir)?;
-    let _ = YAFU_DIR.set(args.dir);
+    CONFIG.set(args).map_err(|_| anyhow::anyhow!("unable to set config"))?;
 
     let mut ideal = Ideal::read(std::io::stdin().lock())?;
 
