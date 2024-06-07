@@ -63,7 +63,9 @@ fn main() -> anyhow::Result<()> {
     unsafe { discriminant::set(args.D)? };
 
     std::fs::create_dir_all(&args.dir)?;
-    CONFIG.set(args).map_err(|_| anyhow::anyhow!("unable to set config"))?;
+    CONFIG
+        .set(args)
+        .map_err(|_| anyhow::anyhow!("unable to set config"))?;
 
     let mut ideal = Ideal::read(std::io::stdin().lock())?;
 

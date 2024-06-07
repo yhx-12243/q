@@ -10,8 +10,8 @@ repository = "https://github.com/yhx-12243/q"
 
 [dependencies]
 anyhow = { version = "1.0.86", features = ["backtrace"] }
-clap = { version = "4.5.4", features = ["derive", "unicode", "wrap_help", "env", "string", "unstable-v5"] }
-clap_derive = { version = "4.5.4", features = ["unstable-v5"] }
+clap = { version = "4.5.6", features = ["derive", "unicode", "wrap_help", "env", "string", "unstable-v5"] }
+clap_derive = { version = "4.5.5", features = ["unstable-v5"] }
 hashbrown = { version = "0.14.5", features = ["serde"] }
 nix = { version = "0.29.0", features = ["signal"] }
 num = { version = "0.4.3", features = ["rand"] }

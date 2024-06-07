@@ -43,7 +43,7 @@ impl QI {
         if a.collinear_with(b) {
             let ca = a.a.gcd(&b.a);
             let mut cb = a.b.gcd(&b.b);
-            if a.a.sign() * b.a.sign() == Sign::Minus {
+            if a.a.sign() * a.b.sign() == Sign::Minus {
                 cb = -cb;
             }
             a.a = ca;
