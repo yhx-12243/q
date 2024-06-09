@@ -31,7 +31,9 @@ impl Drop for DropGuard {
 #[derive(Deserialize)]
 struct YafuOutput<'a> {
     #[serde(borrow, rename = "factors-prime")]
-    factors: Vec<Cow<'a, str>>,
+    factors_p: Option<Vec<Cow<'a, str>>>,
+    #[serde(borrow, rename = "factors-prp")]
+    factors_prp: Option<Vec<Cow<'a, str>>>,
 }
 
 static CHILD_PID: AtomicI32 = AtomicI32::new(0);
@@ -110,9 +112,16 @@ pub fn factor<const N: usize>(ns: [&BigUint; N]) -> anyhow::Result<[Vec<(BigUint
         }
         buf.clear();
         reader.read_line(&mut buf)?;
-        let YafuOutput { factors } = serde_json::from_str(&buf)?;
+        let YafuOutput {
+            factors_p,
+            factors_prp,
+        } = serde_json::from_str(&buf)?;
         let mut map = BTreeMap::new();
-        for factor in factors {
+        for factor in factors_p
+            .into_iter()
+            .flatten()
+            .chain(factors_prp.into_iter().flatten())
+        {
             let factor = factor.parse()?;
             match map.entry(factor) {
                 Occupied(mut occupied) => *occupied.get_mut() += 1,
