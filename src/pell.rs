@@ -190,7 +190,7 @@ fn solve_by_convergents_QIN(
     let mut qs = Vec::with_capacity(empirical);
     let mut mat = Mat2By2 { a: BigUint::one(), b: BigUint::ZERO, c: BigUint::ZERO, d: BigUint::one() };
     loop {
-        let q = (&x.a + (D_sqrt + x.b.is_negative() as u64)).magnitude() / x.b.magnitude();
+        let q = (&x.a + (D_sqrt + u64::from(x.b.is_negative()))).magnitude() / x.b.magnitude();
 
         let q_ = mod_2_64(&q);
         ccx += cx * q_;
@@ -323,7 +323,7 @@ pub fn work_pos(D: u64, p: &BigUint) -> Option<QI> {
                     b: BigInt::from(D / 4),
                 };
                 let (/* _is_neg, */ y, mut z) = solve_by_convergents_QIN(
-                    &BigInt::from(-((D / 8) as i64)),
+                    &BigInt::from_biguint(Sign::Minus, BigUint::from(D / 8)),
                     &BigUint::one(),
                     &BigUint::from(2u32),
                     D,
@@ -418,8 +418,8 @@ pub fn work_pos(D: u64, p: &BigUint) -> Option<QI> {
 /// Solve x^2 - D y^2 = ±p.
 pub fn work(D: i64, p: &BigUint) -> Option<QI> {
     if D < 0 {
-        work_neg(D.unsigned_abs(), p)
+        work_neg(D.wrapping_neg().cast_unsigned(), p)
     } else {
-        work_pos(D as u64, p)
+        work_pos(D.cast_unsigned(), p)
     }
 }

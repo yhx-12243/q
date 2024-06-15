@@ -85,7 +85,7 @@ pub fn factor<const N: usize>(ns: [&BigUint; N]) -> anyhow::Result<[Vec<(BigUint
     }
 
     let r = unsafe {
-        CHILD_PID.store(child.id() as i32, Ordering::Release);
+        CHILD_PID.store(child.id().cast_signed(), Ordering::Release);
         signal(Signal::SIGTERM, SigHandler::Handler(handler))?;
         let r = child.wait()?;
         signal(Signal::SIGTERM, SigHandler::SigDfl)?;
