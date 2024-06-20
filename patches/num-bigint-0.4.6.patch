@@ -1,33 +1,5 @@
-diff --git a/src/bigint/convert.rs b/src/bigint/convert.rs
-index f0c29c4..8c3c57c 100644
---- a/src/bigint/convert.rs
-+++ b/src/bigint/convert.rs
-@@ -25,8 +25,7 @@ impl Num for BigInt {
-     /// Creates and initializes a [`BigInt`].
-     #[inline]
-     fn from_str_radix(mut s: &str, radix: u32) -> Result<BigInt, ParseBigIntError> {
--        let sign = if s.starts_with('-') {
--            let tail = &s[1..];
-+        let sign = if let Some(tail) = s.strip_prefix('-') {
-             if !tail.starts_with('+') {
-                 s = tail
-             }
-diff --git a/src/biguint/convert.rs b/src/biguint/convert.rs
-index 18c74bb..06376f5 100644
---- a/src/biguint/convert.rs
-+++ b/src/biguint/convert.rs
-@@ -221,8 +221,7 @@ impl Num for BigUint {
-     fn from_str_radix(s: &str, radix: u32) -> Result<BigUint, ParseBigIntError> {
-         assert!(2 <= radix && radix <= 36, "The radix must be within 2...36");
-         let mut s = s;
--        if s.starts_with('+') {
--            let tail = &s[1..];
-+        if let Some(tail) = s.strip_prefix('+') {
-             if !tail.starts_with('+') {
-                 s = tail
-             }
 diff --git a/src/biguint/multiplication.rs b/src/biguint/multiplication.rs
-index c97c7e1..d69bafd 100644
+index e9d2138..b09a29f 100644
 --- a/src/biguint/multiplication.rs
 +++ b/src/biguint/multiplication.rs
 @@ -64,7 +64,7 @@ fn bigint_from_slice(slice: &[BigDigit]) -> BigInt {
@@ -40,10 +12,10 @@ index c97c7e1..d69bafd 100644
      if let Some(&0) = b.first() {
          if let Some(nz) = b.iter().position(|&d| d != 0) {
 diff --git a/src/biguint.rs b/src/biguint.rs
-index 4150605..7e68143 100644
+index 196fa32..6927258 100644
 --- a/src/biguint.rs
 +++ b/src/biguint.rs
-@@ -32,6 +32,7 @@ mod serde;
+@@ -29,6 +29,7 @@ mod shift;
  
  pub(crate) use self::convert::to_str_radix_reversed;
  pub use self::iter::{U32Digits, U64Digits};
@@ -51,7 +23,7 @@ index 4150605..7e68143 100644
  
  /// A big unsigned integer type.
  pub struct BigUint {
-@@ -1071,7 +1072,7 @@ impl num_traits::ToBytes for BigUint {
+@@ -1068,7 +1069,7 @@ impl num_traits::ToBytes for BigUint {
      }
  }
  
@@ -61,10 +33,10 @@ index 4150605..7e68143 100644
      fn digits_mut(&mut self) -> &mut Vec<BigDigit>;
      fn normalize(&mut self);
 diff --git a/src/lib.rs b/src/lib.rs
-index b807fd2..be5818e 100644
+index 6e47479..89377a9 100644
 --- a/src/lib.rs
 +++ b/src/lib.rs
-@@ -222,6 +222,7 @@ impl<T> fmt::Display for TryFromBigIntError<T> {
+@@ -213,6 +213,7 @@ impl<T> fmt::Display for TryFromBigIntError<T> {
  
  pub use crate::biguint::BigUint;
  pub use crate::biguint::ToBigUint;
@@ -72,12 +44,12 @@ index b807fd2..be5818e 100644
  pub use crate::biguint::U32Digits;
  pub use crate::biguint::U64Digits;
  
-@@ -229,6 +230,8 @@ pub use crate::bigint::BigInt;
+@@ -220,6 +221,8 @@ pub use crate::bigint::BigInt;
  pub use crate::bigint::Sign;
  pub use crate::bigint::ToBigInt;
  
 +pub use crate::biguint::mac3;
 +
  #[cfg(feature = "rand")]
+ #[cfg_attr(docsrs, doc(cfg(feature = "rand")))]
  pub use crate::bigrand::{RandBigInt, RandomBits, UniformBigInt, UniformBigUint};
- 

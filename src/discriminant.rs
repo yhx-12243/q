@@ -24,7 +24,7 @@ pub fn is4kp1() -> bool {
     unsafe { DISCRIMINANT.get() & 3 == 1 }
 }
 
-pub unsafe fn set(d: NonZeroI64) -> anyhow::Result<()> {
+pub unsafe fn set(d: NonZeroI64, plain: bool) -> anyhow::Result<()> {
     // this is a critical section, but we ensure only called once or using lock.
     unsafe {
         if let Some(e) = d.get().checked_isqrt() && e * e == d.get() {
@@ -34,7 +34,7 @@ pub unsafe fn set(d: NonZeroI64) -> anyhow::Result<()> {
         #[allow(clippy::deref_addrof)]
         if d.get() == -1 {
             "i".clone_into(&mut *&raw mut DISC_STR);
-            "\\mathrm i".clone_into(&mut *&raw mut DISC_LATEX);
+            if plain { "{\\rm i}" } else { "\\mathrm i" }.clone_into(&mut *&raw mut DISC_LATEX);
         } else {
             DISC_STR = format!("√{d}");
             DISC_LATEX = format!("\\sqrt{{{d}}}");

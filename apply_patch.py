@@ -124,6 +124,8 @@ def main():
         .decode()
     print(f'Use toolchain: \x1b[1;36m{toolchain}\x1b[0m\n')
 
+    run(['cargo', 'fetch'], cwd=workspace)
+
     stdlib = args.rustup_path / 'toolchains' / toolchain / 'lib/rustlib/src/rust/library'
     assert stdlib.is_dir()
 

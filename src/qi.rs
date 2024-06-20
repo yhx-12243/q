@@ -154,7 +154,7 @@ impl QI {
         }
     }
 
-    pub fn latex(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    fn tex_common(&self, f: &mut Formatter<'_>, plain: bool) -> std::fmt::Result {
         let e = discriminant::is4kp1();
         let s = discriminant::get_latex();
         if self.b.is_zero() {
@@ -181,7 +181,7 @@ impl QI {
         } else {
             let div2 = e && self.a.is_odd();
             if div2 {
-                f.write_str("\\frac{")?;
+                f.write_str(if plain { "{" } else { "\\frac{" })?;
             }
             let (a_, b_): (BigInt, BigInt);
             let (a, b) = if e && !self.a.is_odd() {
@@ -199,10 +199,18 @@ impl QI {
             }
             f.write_str(s)?;
             if div2 {
-                f.write_str("}2")?;
+                f.write_str(if plain { "\\over2}" } else { "}2" })?;
             }
             Ok(())
         }
+    }
+
+    pub fn latex(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        self.tex_common(f, false)
+    }
+
+    pub fn tex(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        self.tex_common(f, true)
     }
 }
 
@@ -248,7 +256,7 @@ mod tests {
     #[rustfmt::skip]
     fn latex_test_1() {
         let _guard = discriminant::DISC_TEST_LOCK.lock().unwrap();
-        unsafe { discriminant::set(NonZeroI64::new(-6).unwrap()).unwrap() };
+        unsafe { discriminant::set(NonZeroI64::new(-6).unwrap(), false).unwrap() };
 
         check(QI::from(BigInt::from(-15)), "-15");
         check(QI::from(BigInt::from(-1)), "-1");
@@ -271,7 +279,7 @@ mod tests {
     #[rustfmt::skip]
     fn latex_test_2() {
         let _guard = discriminant::DISC_TEST_LOCK.lock().unwrap();
-        unsafe { discriminant::set(NonZeroI64::new(-7).unwrap()).unwrap() };
+        unsafe { discriminant::set(NonZeroI64::new(-7).unwrap(), false).unwrap() };
 
         check(QI::from(BigInt::from(-30)), "-15");
         check(QI::from(BigInt::from(-2)), "-1");

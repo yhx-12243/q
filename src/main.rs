@@ -1,16 +1,11 @@
 #![feature(
-    array_try_map,
     debug_closure_helpers,
-    exact_size_is_empty,
     exit_status_error,
-    fmt_helpers_for_derive,
     fmt_internals,
     get_many_mut,
-    hint_assert_unchecked,
     io_error_more,
     integer_sign_cast,
     isqrt,
-    iter_next_chunk,
     let_chains,
     raw_ref_op,
     slice_ptr_get,
@@ -52,6 +47,8 @@ struct Args {
         help = "Max number of continuous fraction iteration to solve Pell equation/check for principal ideals"
     )]
     max_iter: usize,
+    #[arg(long, help = "Whether to output Plain TeX code instead of LaTeX")]
+    plain_tex: bool,
 }
 
 static CONFIG: std::sync::OnceLock<Args> = std::sync::OnceLock::new();
@@ -60,8 +57,8 @@ fn main() -> anyhow::Result<()> {
     use clap::Parser;
     use ideal::Ideal;
 
-    let args = Args::parse();
-    unsafe { discriminant::set(args.D)? };
+    let args @ Args { plain_tex, .. } = Args::parse();
+    unsafe { discriminant::set(args.D, args.plain_tex)? };
 
     std::fs::create_dir_all(&args.dir)?;
     CONFIG
@@ -76,11 +73,10 @@ fn main() -> anyhow::Result<()> {
         use core::fmt::{rt::Argument, Arguments};
         use std::io::Write;
 
+        let fmt = if plain_tex { Ideal::tex } else { Ideal::latex };
+
         let mut stdout = std::io::stdout().lock();
-        stdout.write_fmt(Arguments::new_v1(
-            &["", "="],
-            &[Argument::new(&ideal, Ideal::latex)],
-        ))?;
+        stdout.write_fmt(Arguments::new_v1(&["", "="], &[Argument::new(&ideal, fmt)]))?;
 
         let ideals = ideal.factor()?;
 
@@ -89,10 +85,7 @@ fn main() -> anyhow::Result<()> {
         }
 
         for (ideal, exp) in ideals {
-            stdout.write_fmt(Arguments::new_v1(
-                &[""],
-                &[Argument::new(&ideal, Ideal::latex)],
-            ))?;
+            stdout.write_fmt(Arguments::new_v1(&[""], &[Argument::new(&ideal, fmt)]))?;
             if exp > 1 {
                 write!(stdout, "^{{{exp}}}")?;
             }

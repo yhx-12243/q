@@ -314,7 +314,7 @@ impl Ideal {
         Ok(result)
     }
 
-    pub fn latex(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    fn tex_common(&self, f: &mut Formatter<'_>, inner: fn(&QI, &mut Formatter) -> std::fmt::Result) -> std::fmt::Result {
         f.write_str("\\left(")?;
         if self.is_zero() {
             f.write_str("0")?;
@@ -322,11 +322,19 @@ impl Ideal {
             let mut maybe_comma = "";
             for qi in &self.0 {
                 f.write_str(maybe_comma)?;
-                qi.latex(f)?;
+                inner(qi, f)?;
                 maybe_comma = ",";
             }
         }
         f.write_str("\\right)")
+    }
+
+    pub fn latex(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        self.tex_common(f, QI::latex)
+    }
+
+    pub fn tex(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        self.tex_common(f, QI::tex)
     }
 
     pub fn read<R>(mut input: R) -> io::Result<Self>
@@ -392,7 +400,7 @@ mod tests {
     #[rustfmt::skip]
     fn latex_test_1() {
         let _guard = discriminant::DISC_TEST_LOCK.lock().unwrap();
-        unsafe { discriminant::set(NonZeroI64::new(-6).unwrap()).unwrap() };
+        unsafe { discriminant::set(NonZeroI64::new(-6).unwrap(), false).unwrap() };
 
         let ideal = Ideal(smallvec![
             QI::from(BigInt::from(-15)),
@@ -419,7 +427,7 @@ mod tests {
     #[rustfmt::skip]
     fn latex_test_2() {
         let _guard = discriminant::DISC_TEST_LOCK.lock().unwrap();
-        unsafe { discriminant::set(NonZeroI64::new(-7).unwrap()).unwrap() };
+        unsafe { discriminant::set(NonZeroI64::new(-7).unwrap(), false).unwrap() };
 
         let ideal = Ideal(smallvec![
             QI::from(BigInt::from(-30)),

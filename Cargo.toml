@@ -10,14 +10,14 @@ repository = "https://github.com/yhx-12243/q"
 
 [dependencies]
 anyhow = { version = "1.0.86", features = ["backtrace"] }
-clap = { version = "4.5.7", features = ["derive", "unicode", "wrap_help", "env", "string", "unstable-v5"] }
-clap_derive = { version = "4.5.5", features = ["unstable-v5"] }
+clap = { version = "4.5.9", features = ["derive", "unicode", "wrap_help", "env", "string", "unstable-v5"] }
+clap_derive = { version = "4.5.8", features = ["unstable-v5"] }
 hashbrown = { version = "0.14.5", features = ["serde"] }
 nix = { version = "0.29.0", features = ["signal"] }
 num = { version = "0.4.3", features = ["rand"] }
 rand = { version = "0.8.5", features = ["log", "nightly"] }
-serde = { version = "1.0.203", features = ["derive"] }
-serde_json = { version = "1.0.117", features = ["float_roundtrip"] }
+serde = { version = "1.0.204", features = ["derive"] }
+serde_json = { version = "1.0.120", features = ["float_roundtrip"] }
 smallvec = { version = "1.13.2", features = ["const_new", "may_dangle", "specialization", "union"] }
 
 [lints.rust]
