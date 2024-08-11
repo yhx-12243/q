@@ -13,7 +13,7 @@ pub struct mpz_t {
     pub d: NonNull<u64>,
 }
 
-extern "C" {
+unsafe extern "C" {
     #[link_name = "__gmpz_jacobi"]
     pub fn mpz_jacobi(a: *const mpz_t, p: *const mpz_t) -> i32;
 }
