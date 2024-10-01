@@ -1,5 +1,5 @@
 use nix::{
-    sys::signal::{kill, signal, SigHandler, Signal},
+    sys::signal::{SigHandler, Signal, kill, signal},
     unistd::Pid,
 };
 use num::{BigUint, One};
@@ -7,8 +7,8 @@ use serde::Deserialize;
 use std::{
     borrow::Cow,
     collections::{
-        btree_map::Entry::{Occupied, Vacant},
         BTreeMap,
+        btree_map::Entry::{Occupied, Vacant},
     },
     fs,
     io::{BufRead, BufReader, Write},

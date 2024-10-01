@@ -1,6 +1,6 @@
 use std::fmt::{Display, Formatter, Write};
 
-use num::{bigint::Sign, BigInt, BigUint, Integer, One, Signed, Zero};
+use num::{BigInt, BigUint, Integer, One, Signed, Zero, bigint::Sign};
 
 use crate::discriminant;
 
@@ -243,7 +243,7 @@ mod tests {
 
     use num::BigInt;
 
-    use super::{discriminant, QI};
+    use super::{QI, discriminant};
 
     fn check(qi: QI, s: &str) {
         let mut t = String::new();

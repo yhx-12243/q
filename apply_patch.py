@@ -100,7 +100,7 @@ def patch_cargo(identifier, patch, crates_io):
 def patch_git(identifier, patch, cargo_git):
     name, version = identifier.rsplit('-', 1)
     for d in cargo_git:
-        if d.name.startswith(name):
+        if d.name.startswith(name) and (d / version).is_dir():
             return (
                 f'\x1b[32m======== Applying \x1b[1;35m{identifier}\x1b[32m ========\x1b[0m',
                 patch_inner(patch, d / version),

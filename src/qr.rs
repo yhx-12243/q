@@ -1,8 +1,8 @@
 use std::ptr::NonNull;
 
 use num::{
-    bigint::{IntDigits, RandBigInt},
     BigUint, Integer, One, Zero,
+    bigint::{IntDigits, RandBigInt},
 };
 use rand::thread_rng;
 

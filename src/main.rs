@@ -7,7 +7,6 @@
     integer_sign_cast,
     isqrt,
     let_chains,
-    raw_ref_op,
     slice_ptr_get,
     stmt_expr_attributes,
 )]
@@ -70,7 +69,7 @@ fn main() -> anyhow::Result<()> {
     ideal.reduce();
 
     {
-        use core::fmt::{rt::Argument, Arguments};
+        use core::fmt::{Arguments, rt::Argument};
         use std::io::Write;
 
         let fmt = if plain_tex { Ideal::tex } else { Ideal::latex };

@@ -1,10 +1,10 @@
 use std::{cmp::Ordering, fmt::Formatter, io, str::FromStr};
 
 use num::{
-    bigint::{IntDigits, Sign},
     BigInt, BigUint, Integer, One, Zero,
+    bigint::{IntDigits, Sign},
 };
-use smallvec::{smallvec_inline, SmallVec};
+use smallvec::{SmallVec, smallvec_inline};
 
 use crate::{discriminant, factor::factor, pell, qi::QI, qr::quadratic_residue};
 
