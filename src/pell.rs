@@ -125,7 +125,7 @@ fn solve_by_convergents(
         qs.push(q);
 
         if (ccx * (ccx * P_ - ccy * Q_) + ccy * ccy * R_).0 == 1 {
-            matmul(&mut mat, unsafe { &convergent_inner(&qs) });
+            matmul(&mut mat, &unsafe { convergent_inner(&qs) });
             if &mat.a * &mat.a * P + &mat.c * &mat.c * R == &mat.a * &mat.c * Q + 1u32 {
                 return Some((mat.a, mat.c));
             }
@@ -206,7 +206,7 @@ fn solve_by_convergents_QIN(
 
         let trial = ccx * (ccx * P_ - ccy * Q_) + ccy * ccy * R_;
         if trial.0 == 1 || trial.0 == u64::MAX {
-            matmul(&mut mat, unsafe { &convergent_inner(&qs) });
+            matmul(&mut mat, &unsafe { convergent_inner(&qs) });
             let x = BigInt::from(mat.a);
             let trial = &x * (&x * P - BigInt::from(&mat.c * Q)) + BigInt::from(&mat.c * &mat.c * R);
             mat.a = x.into_parts().1;
