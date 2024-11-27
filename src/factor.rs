@@ -1,9 +1,7 @@
-use nix::{
-    sys::signal::{SigHandler, Signal, kill, signal},
-    unistd::Pid,
+use core::{
+    sync::atomic::{AtomicI32, Ordering},
+    time::Duration,
 };
-use num::{BigUint, One};
-use serde::Deserialize;
 use std::{
     borrow::Cow,
     collections::{
@@ -14,9 +12,15 @@ use std::{
     io::{BufRead, BufReader, Write},
     path::PathBuf,
     process::{Command, Stdio},
-    sync::atomic::{AtomicI32, Ordering},
-    time::{Duration, Instant},
+    time::Instant,
 };
+
+use nix::{
+    sys::signal::{SigHandler, Signal, kill, signal},
+    unistd::Pid,
+};
+use num::{BigUint, One};
+use serde::Deserialize;
 
 use crate::CONFIG;
 
@@ -52,9 +56,9 @@ pub fn factor<const N: usize>(ns: [&BigUint; N]) -> anyhow::Result<[Vec<(BigUint
         return Ok(result);
     }
 
-    let t1 = std::time::Instant::now();
+    let t1 = Instant::now();
     #[allow(clippy::transmute_undefined_repr)]
-    let td = unsafe { std::mem::transmute::<Instant, Duration>(t1) };
+    let td = unsafe { core::mem::transmute::<Instant, Duration>(t1) };
     let mut path = CONFIG
         .get()
         .map_or_else(|| PathBuf::from("./"), |config| config.dir.clone());
@@ -139,7 +143,7 @@ pub fn factor<const N: usize>(ns: [&BigUint; N]) -> anyhow::Result<[Vec<(BigUint
 
 #[cfg(test)]
 mod tests {
-    use std::str::FromStr;
+    use core::str::FromStr;
 
     use num::BigUint;
 

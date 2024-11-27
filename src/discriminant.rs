@@ -1,4 +1,4 @@
-use std::num::NonZeroI64;
+use core::num::NonZeroI64;
 
 static mut DISCRIMINANT: NonZeroI64 = unsafe { NonZeroI64::new_unchecked(-1) };
 static mut DISC_STR: String = String::new();

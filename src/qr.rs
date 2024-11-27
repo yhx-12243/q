@@ -1,4 +1,4 @@
-use std::ptr::NonNull;
+use core::ptr::NonNull;
 
 use num::{
     BigUint, Integer, One, Zero,
@@ -82,7 +82,7 @@ pub fn quadratic_residue(n: &BigUint, p: &BigUint) -> Option<BigUint> {
 
 #[cfg(test)]
 mod test {
-    use std::str::FromStr;
+    use core::str::FromStr;
 
     use num::BigUint;
 

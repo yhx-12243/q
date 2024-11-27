@@ -1,4 +1,4 @@
-use std::fmt::{Display, Formatter, Write};
+use core::fmt::{self, Display, Formatter, Write};
 
 use num::{BigInt, BigUint, Integer, One, Signed, Zero, bigint::Sign};
 
@@ -154,7 +154,7 @@ impl QI {
         }
     }
 
-    fn tex_common(&self, f: &mut Formatter<'_>, plain: bool) -> std::fmt::Result {
+    fn tex_common(&self, f: &mut Formatter<'_>, plain: bool) -> fmt::Result {
         let e = discriminant::is4kp1();
         let s = discriminant::get_latex();
         if self.b.is_zero() {
@@ -205,17 +205,17 @@ impl QI {
         }
     }
 
-    pub fn latex(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    pub fn latex(&self, f: &mut Formatter<'_>) -> fmt::Result {
         self.tex_common(f, false)
     }
 
-    pub fn tex(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    pub fn tex(&self, f: &mut Formatter<'_>) -> fmt::Result {
         self.tex_common(f, true)
     }
 }
 
 impl Display for QI {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let e = discriminant::is4kp1();
         let s = discriminant::get_str();
         if !e {
@@ -239,7 +239,7 @@ impl From<BigInt> for QI {
 
 #[cfg(test)]
 mod tests {
-    use std::num::NonZeroI64;
+    use core::num::NonZeroI64;
 
     use num::BigInt;
 

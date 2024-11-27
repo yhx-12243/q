@@ -1,21 +1,17 @@
-use std::num::Wrapping;
+use core::num::Wrapping;
 
 use hashbrown::HashSet;
 use num::{
-    bigint::{IntDigits, Sign},
     BigInt, BigUint, Integer, One, Signed, Zero,
+    bigint::{IntDigits, Sign},
 };
 
-use crate::{qi::QI, qr::quadratic_residue, CONFIG};
+use crate::{CONFIG, qi::QI, qr::quadratic_residue};
 
 #[inline]
 fn mod_2_64_signed(x: &BigInt) -> Wrapping<u64> {
     let y = mod_2_64(x.magnitude());
-    if x.is_negative() {
-        -y
-    } else {
-        y
-    }
+    if x.is_negative() { -y } else { y }
 }
 
 #[inline]
@@ -265,11 +261,7 @@ pub fn work_neg(D: u64, p: &BigUint) -> Option<QI> {
         let x = {
             let a = &Q * &y;
             let b = p * &z * 2u32;
-            if a < b {
-                b - a
-            } else {
-                a - b
-            }
+            if a < b { b - a } else { a - b }
         };
 
         Some(QI {
@@ -292,11 +284,7 @@ pub fn work_neg(D: u64, p: &BigUint) -> Option<QI> {
         let x = {
             let a = &Q * &y;
             let b = p * &z;
-            if a < b {
-                b - a
-            } else {
-                a - b
-            }
+            if a < b { b - a } else { a - b }
         };
 
         Some(QI {
@@ -366,11 +354,7 @@ pub fn work_pos(D: u64, p: &BigUint) -> Option<QI> {
         let x = {
             let a = &Q * &y;
             let b = p * &z * 2u32;
-            if a < b {
-                b - a
-            } else {
-                a - b
-            }
+            if a < b { b - a } else { a - b }
         };
 
         Some(QI {
@@ -401,11 +385,7 @@ pub fn work_pos(D: u64, p: &BigUint) -> Option<QI> {
         let x = {
             let a = &Q * &y;
             let b = p * &z;
-            if a < b {
-                b - a
-            } else {
-                a - b
-            }
+            if a < b { b - a } else { a - b }
         };
 
         Some(QI {

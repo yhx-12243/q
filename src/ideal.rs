@@ -1,4 +1,9 @@
-use std::{cmp::Ordering, fmt::Formatter, io, str::FromStr};
+use core::{
+    cmp::Ordering,
+    fmt::{self, Formatter},
+    str::FromStr,
+};
+use std::io;
 
 use num::{
     BigInt, BigUint, Integer, One, Zero,
@@ -314,7 +319,7 @@ impl Ideal {
         Ok(result)
     }
 
-    fn tex_common(&self, f: &mut Formatter<'_>, inner: fn(&QI, &mut Formatter) -> std::fmt::Result) -> std::fmt::Result {
+    fn tex_common(&self, f: &mut Formatter<'_>, inner: fn(&QI, &mut Formatter) -> fmt::Result) -> fmt::Result {
         f.write_str("\\left(")?;
         if self.is_zero() {
             f.write_str("0")?;
@@ -329,11 +334,11 @@ impl Ideal {
         f.write_str("\\right)")
     }
 
-    pub fn latex(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    pub fn latex(&self, f: &mut Formatter<'_>) -> fmt::Result {
         self.tex_common(f, QI::latex)
     }
 
-    pub fn tex(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    pub fn tex(&self, f: &mut Formatter<'_>) -> fmt::Result {
         self.tex_common(f, QI::tex)
     }
 
@@ -369,8 +374,8 @@ impl Ideal {
     }
 }
 
-impl core::fmt::Display for Ideal {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+impl fmt::Display for Ideal {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let mut builder = f.debug_tuple("");
         for qi in &self.0 {
             builder.field_with(|f| qi.fmt(f));
@@ -381,7 +386,7 @@ impl core::fmt::Display for Ideal {
 
 #[cfg(test)]
 mod tests {
-    use std::num::NonZeroI64;
+    use core::num::NonZeroI64;
 
     use num::BigInt;
     use smallvec::smallvec;
