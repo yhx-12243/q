@@ -129,7 +129,7 @@ def main():
     stdlib = args.rustup_path / 'toolchains' / toolchain / 'lib/rustlib/src/rust/library'
     assert stdlib.is_dir()
 
-    crates_io = args.cargo_path / 'registry/src/index.crates.io-6f17d22bba15001f'
+    crates_io = args.cargo_path / 'registry/src/index.crates.io-1949cf8c6b5b557f'
     assert crates_io.is_dir()
 
     cargo_git_dir = args.cargo_path / 'git/checkouts'
