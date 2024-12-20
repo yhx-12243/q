@@ -2,6 +2,7 @@
     debug_closure_helpers,
     exit_status_error,
     fmt_internals,
+    formatting_options,
     get_many_mut,
     integer_sign_cast,
     let_chains,
