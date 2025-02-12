@@ -1,6 +1,6 @@
 use core::num::NonZeroI64;
 
-static mut DISCRIMINANT: NonZeroI64 = unsafe { NonZeroI64::new_unchecked(-1) };
+static mut DISCRIMINANT: NonZeroI64 = NonZeroI64::new(-1).unwrap();
 static mut DISC_STR: String = String::new();
 static mut DISC_LATEX: String = String::new();
 #[cfg(test)]
@@ -38,7 +38,7 @@ pub unsafe fn set(d: NonZeroI64, plain: bool) -> anyhow::Result<()> {
         } else {
             DISC_STR = format!("√{d}");
             DISC_LATEX = format!("\\sqrt{{{d}}}");
-        };
+        }
         Ok(())
     }
 }

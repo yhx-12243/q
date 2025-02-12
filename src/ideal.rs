@@ -1,6 +1,7 @@
 use core::{
     cmp::Ordering,
     fmt::{self, Formatter},
+    mem::MaybeUninit,
     str::FromStr,
 };
 use std::io;
@@ -15,7 +16,7 @@ use crate::{discriminant, factor::factor, pell, qi::QI, qr::quadratic_residue};
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 #[repr(transparent)]
-pub struct Ideal(SmallVec<[QI; 2]>);
+pub struct Ideal(SmallVec<QI, 2>);
 
 fn extract<R>(input: &mut R) -> io::Result<Option<BigInt>>
 where
@@ -74,8 +75,13 @@ where
 
 impl Ideal {
     #[inline]
+    pub const fn zero() -> Self {
+        Self(SmallVec::new())
+    }
+
+    #[inline]
     pub const fn principal(x: QI) -> Self {
-        Self(unsafe { SmallVec::from_const_with_len_unchecked([x, QI::ZERO], 1) })
+        Self(unsafe { SmallVec::from_buf_and_len_unchecked(MaybeUninit::new([x, QI::ZERO]), 1) })
     }
 
     #[inline]
@@ -134,7 +140,7 @@ impl Ideal {
     }
 
     /// p should be a prime, otherwise UB.
-    pub fn factor_prime(p: &BigUint) -> SmallVec<[Self; 2]> {
+    pub fn factor_prime(p: &BigUint) -> SmallVec<Self, 2> {
         let d = discriminant::get();
         let e = d.get() & 3 == 1;
         let q = if e { p * 2u32 } else { p.clone() };
@@ -155,7 +161,7 @@ impl Ideal {
             } else {
                 // inert
                 let ideal = Self::principal(BigInt::from(q).into());
-                unsafe { SmallVec::from_const_with_len_unchecked([ideal, Self::default()], 1) }
+                SmallVec::from_buf_and_len([ideal, const { Self::zero() }], 1)
             };
         }
 
@@ -200,7 +206,7 @@ impl Ideal {
         } else {
             // inert
             let ideal = Self::principal(BigInt::from(q).into());
-            unsafe { SmallVec::from_const_with_len_unchecked([ideal, Self::default()], 1) }
+            SmallVec::from_buf_and_len([ideal, const { Self::zero() }], 1)
         }
     }
 
@@ -347,7 +353,7 @@ impl Ideal {
         R: io::BufRead,
     {
         let e = discriminant::is4kp1();
-        let mut qis = SmallVec::new_const();
+        let mut qis = const { SmallVec::new() };
         let mut last: Option<BigInt> = None;
 
         while let Some(cur) = extract(&mut input)? {
@@ -396,7 +402,7 @@ mod tests {
 
     fn check(ideal: Ideal, s: &str) {
         let mut t = String::new();
-        let mut fmt = core::fmt::Formatter::new(&mut t);
+        let mut fmt = core::fmt::Formatter::new(&mut t, core::fmt::FormattingOptions::new());
         ideal.latex(&mut fmt).unwrap();
         assert_eq!(s, t);
     }

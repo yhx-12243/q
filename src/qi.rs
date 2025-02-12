@@ -247,7 +247,7 @@ mod tests {
 
     fn check(qi: QI, s: &str) {
         let mut t = String::new();
-        let mut fmt = core::fmt::Formatter::new(&mut t);
+        let mut fmt = core::fmt::Formatter::new(&mut t, core::fmt::FormattingOptions::new());
         qi.latex(&mut fmt).unwrap();
         assert_eq!(s, t);
     }

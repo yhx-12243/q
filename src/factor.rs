@@ -153,8 +153,8 @@ mod tests {
     #[rustfmt::skip]
     fn test_factor() {
         let result = factor([
-            &BigUint::from(2021010889u32),
-            &BigUint::from(2021011832u32),
+            &BigUint::from(2_021_010_889u32),
+            &BigUint::from(2_021_011_832u32),
             &BigUint::from(1u32),
             &BigUint::from_str(&"4".repeat(67)).unwrap(),
             &BigUint::from_str(&"4".repeat(67)).unwrap(),
@@ -165,7 +165,7 @@ mod tests {
             result,
             [
                 [
-                    (BigUint::from(2021010889u32), 1),
+                    (BigUint::from(2_021_010_889u32), 1),
                 ].as_slice(),
                 [
                     (BigUint::from(2u32), 3),

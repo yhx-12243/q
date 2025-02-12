@@ -89,6 +89,7 @@ mod test {
     use super::{jacobi, quadratic_residue};
 
     #[test]
+    #[allow(clippy::too_many_lines)]
     fn jacobi_test() {
         #[rustfmt::skip]
         let tests = [
@@ -232,6 +233,7 @@ mod test {
     }
 
     #[test]
+    #[allow(clippy::too_many_lines)]
     fn quadratic_residue_test() {
         #[rustfmt::skip]
         let tests = [
