@@ -95,11 +95,11 @@ impl Ideal {
         }
         let mut i = self.0.len();
         while i >= 3 {
-            let [a, b, c] = unsafe { self.0.get_many_unchecked_mut([i - 3, i - 2, i - 1]) };
+            let [a, b, c] = unsafe { self.0.get_disjoint_unchecked_mut([i - 3, i - 2, i - 1]) };
             QI::reduce3(a, b, c);
             i -= 1;
         }
-        let [a, b] = unsafe { self.0.get_many_unchecked_mut([0, 1]) };
+        let [a, b] = unsafe { self.0.get_disjoint_unchecked_mut([0, 1]) };
         QI::reduce2(a, b);
         let a = core::mem::take(a);
         let b = core::mem::take(b);

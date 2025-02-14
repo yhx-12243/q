@@ -109,7 +109,7 @@ pub fn factor<const N: usize>(ns: [&BigUint; N]) -> anyhow::Result<[Vec<(BigUint
         unsafe {
             let j = *dup.get_unchecked(i);
             if j != usize::MAX {
-                let [ri, rj] = result.get_many_unchecked_mut([i, j]);
+                let [ri, rj] = result.get_disjoint_unchecked_mut([i, j]);
                 ri.clone_from(rj);
                 continue;
             }
