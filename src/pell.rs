@@ -1,10 +1,9 @@
 use core::num::Wrapping;
 
 use hashbrown::HashSet;
-use num::{
-    BigInt, BigUint, Integer, One, Signed, Zero,
-    bigint::{IntDigits, Sign},
-};
+use num_bigint::{BigInt, BigUint, IntDigits, Sign};
+use num_integer::Integer;
+use num_traits::{One, Signed, Zero};
 
 use crate::{CONFIG, qi::QI, qr::quadratic_residue};
 

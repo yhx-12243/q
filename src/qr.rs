@@ -1,10 +1,9 @@
 use core::ptr::NonNull;
 
-use num::{
-    BigUint, Integer, One, Zero,
-    bigint::{IntDigits, RandBigInt},
-};
-use rand::thread_rng;
+use num_bigint::{BigUint, IntDigits, RandBigInt};
+use num_integer::Integer;
+use num_traits::{One, Zero};
+use rand::rng;
 
 #[repr(C)]
 pub struct mpz_t {
@@ -44,9 +43,9 @@ pub fn quadratic_residue(n: &BigUint, p: &BigUint) -> Option<BigUint> {
     if jacobi(n, p) == -1 {
         return None;
     }
-    let mut rng = thread_rng();
+    let mut rng = rng();
     let (mut a, q) = loop {
-        let a = rng.gen_biguint_below(p);
+        let a = rng.random_biguint_below(p);
         let q = (&a * &a + p - n) % p;
         if !q.is_zero() && jacobi(&q, p) == -1 {
             break (a, q);

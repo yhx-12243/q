@@ -12,8 +12,10 @@ clap = { version = "4.5.29", features = ["derive", "unicode", "wrap_help", "env"
 clap_derive = { version = "4.5.28", features = ["unstable-v5"] }
 hashbrown = { version = "0.15.2", features = ["serde"] }
 nix = { version = "0.29.0", features = ["signal"] }
-num = { version = "0.4.3", features = ["rand"] }
-rand = { version = "0.8.5", features = ["log", "nightly"] } # TODO: Update to 0.9 once rust-num/num-bigint#317 gets merged
+num-bigint = { git = "https://github.com/bionicles/num-bigint" }
+num-integer = "0.1.46"
+num-traits = "0.2.19"
+rand = { version = "0.9.0", features = ["log", "nightly"] }
 serde = { version = "1.0.217", features = ["derive"] }
 serde_json = { version = "1.0.138", features = ["float_roundtrip"] }
 smallvec = { version = "2.0.0-alpha.10", features = ["may_dangle", "specialization"] }

@@ -19,7 +19,8 @@ use nix::{
     sys::signal::{SigHandler, Signal, kill, signal},
     unistd::Pid,
 };
-use num::{BigUint, One};
+use num_bigint::BigUint;
+use num_traits::One;
 use serde::Deserialize;
 
 use crate::CONFIG;

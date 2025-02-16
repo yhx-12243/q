@@ -6,10 +6,9 @@ use core::{
 };
 use std::io;
 
-use num::{
-    BigInt, BigUint, Integer, One, Zero,
-    bigint::{IntDigits, Sign},
-};
+use num_bigint::{BigInt, BigUint, IntDigits, Sign};
+use num_integer::Integer;
+use num_traits::{One, Zero};
 use smallvec::{SmallVec, smallvec_inline};
 
 use crate::{discriminant, factor::factor, pell, qi::QI, qr::quadratic_residue};
