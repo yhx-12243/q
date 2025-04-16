@@ -37,7 +37,11 @@ pub unsafe fn set(d: NonZeroI64, plain: bool) -> anyhow::Result<()> {
             if plain { "{\\rm i}" } else { "\\mathrm i" }.clone_into(&mut *&raw mut DISC_LATEX);
         } else {
             DISC_STR = format!("√{d}");
-            DISC_LATEX = format!("\\sqrt{{{d}}}");
+            DISC_LATEX = if matches!(d.get(), 0..10) {
+                format!("\\sqrt{d}")
+            } else {
+                format!("\\sqrt{{{d}}}")
+            };
         }
         Ok(())
     }

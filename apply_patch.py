@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from argparse import ArgumentParser
+from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
 from enum import Enum
 from hashlib import sha1
 from os import unlink
@@ -11,10 +11,10 @@ from subprocess import run
 from tempfile import NamedTemporaryFile
 
 def parse_args():
-    parser = ArgumentParser()
-    parser.add_argument('--cargo-path', help='Cargo path of your system (default: ~/.cargo)', type=Path, default=Path.home() / '.cargo')
-    parser.add_argument('--rustup-path', help='Rustup path of your system (default: ~/.rustup)', type=Path, default=Path.home() / '.rustup')
-    parser.add_argument('--std-patch-server', help='Server to download std patch which updates frequently (default: https://43.138.56.99/rust-std-patches/)', default='https://43.138.56.99/rust-std-patches/')
+    parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
+    parser.add_argument('--cargo-path', help='Cargo path of your system', type=Path, default=Path.home() / '.cargo')
+    parser.add_argument('--rustup-path', help='Rustup path of your system', type=Path, default=Path.home() / '.rustup')
+    parser.add_argument('--std-patch-server', help='Server to download std patch which updates frequently', default='https://43.138.56.99/rust-std-patches/')
     return parser.parse_args()
 
 STD = ['core', 'alloc', 'std']

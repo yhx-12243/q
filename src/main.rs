@@ -3,8 +3,8 @@
     exit_status_error,
     fmt_internals,
     formatting_options,
-    integer_sign_cast,
     let_chains,
+    non_null_from_ref,
     slice_ptr_get,
     stmt_expr_attributes,
 )]
@@ -67,13 +67,26 @@ fn main() -> anyhow::Result<()> {
     ideal.reduce();
 
     {
-        use core::fmt::{Arguments, rt::Argument};
+        use core::{
+            fmt::{
+                Arguments,
+                rt::{Argument, ArgumentType},
+            },
+            marker::PhantomData,
+            ptr::NonNull,
+        };
         use std::io::Write;
 
         let fmt = if plain_tex { Ideal::tex } else { Ideal::latex };
 
         let mut stdout = std::io::stdout().lock();
-        stdout.write_fmt(Arguments::new_v1(&["", "="], &[Argument::new(&ideal, fmt)]))?;
+        stdout.write_fmt(Arguments::new_v1(&["", "="], &[Argument {
+            ty: ArgumentType::Placeholder {
+                value: NonNull::from_ref(&ideal).cast(),
+                formatter: unsafe { core::mem::transmute(fmt) },
+                _lifetime: PhantomData,
+            },
+        }]))?;
 
         let ideals = ideal.factor()?;
 
@@ -82,7 +95,13 @@ fn main() -> anyhow::Result<()> {
         }
 
         for (ideal, exp) in ideals {
-            stdout.write_fmt(Arguments::new_v1(&[""], &[Argument::new(&ideal, fmt)]))?;
+            stdout.write_fmt(Arguments::new_v1(&[""], &[Argument {
+                ty: ArgumentType::Placeholder {
+                    value: NonNull::from_ref(&ideal).cast(),
+                    formatter: unsafe { core::mem::transmute(fmt) },
+                    _lifetime: PhantomData,
+                },
+            }]))?;
             if exp > 1 {
                 write!(stdout, "^{{{exp}}}")?;
             }
