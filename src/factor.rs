@@ -1,4 +1,5 @@
 use core::{
+    fmt,
     sync::atomic::{AtomicI32, Ordering},
     time::Duration,
 };
@@ -63,7 +64,10 @@ pub fn factor<const N: usize>(ns: [&BigUint; N]) -> anyhow::Result<[Vec<(BigUint
     let mut path = CONFIG
         .get()
         .map_or_else(|| PathBuf::from("./"), |config| config.dir.clone());
-    path.push(format!("q{}.json", td.as_nanos()));
+    path.reserve(32); // sufficient
+    path.push("q");
+    fmt::LowerHex::fmt(&td.as_nanos(), &mut fmt::Formatter::new(path.as_mut_os_string(), fmt::FormattingOptions::new()))?;
+    path.push(".json");
     let mut child = Command::new("yafu")
         .arg("factor(@)")
         .arg("-factorjson")

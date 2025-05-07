@@ -31,18 +31,31 @@ struct Mat2By2 {
 
 /// matrix multiplication.
 fn matmul(lhs: &mut Mat2By2, rhs: &Mat2By2) {
-    let ab = &lhs.a * &rhs.b;
-    let bc = &lhs.b * &rhs.c;
-    let cb = &lhs.c * &rhs.b;
-    let dc = &lhs.d * &rhs.c;
-    lhs.a *= &rhs.a;
-    lhs.a += bc;
-    lhs.b *= &rhs.d;
-    lhs.b += ab;
-    lhs.c *= &rhs.a;
-    lhs.c += dc;
-    lhs.d *= &rhs.d;
-    lhs.d += cb;
+    #[inline]
+    fn fma(acc: &mut BigUint, b: &BigUint, c: &BigUint) {
+        {
+            let acc = acc.digits_mut();
+            let new_len = b.len() + c.len() + 1;
+            if new_len > acc.len() {
+                acc.resize(new_len, 0);
+            }
+            num_bigint::mac3(acc, b.digits(), c.digits());
+        }
+        acc.normalize();
+    }
+
+    let mut aa = &lhs.a * &rhs.a;
+    let mut ab = &lhs.a * &rhs.b;
+    let mut ca = &lhs.c * &rhs.a;
+    let mut cb = &lhs.c * &rhs.b;
+    fma(&mut aa, &lhs.b, &rhs.c);
+    fma(&mut ab, &lhs.b, &rhs.d);
+    fma(&mut ca, &lhs.d, &rhs.c);
+    fma(&mut cb, &lhs.d, &rhs.d);
+    lhs.a = aa;
+    lhs.b = ab;
+    lhs.c = ca;
+    lhs.d = cb;
 }
 
 /// inner method of divide & conquer (qs should not be empty)
