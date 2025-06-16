@@ -1,4 +1,4 @@
-use core::time::Duration;
+use core::{error::Error, time::Duration};
 
 use ciborium::Value as Cbor;
 use num_bigint::{BigUint, IntDigits};
@@ -25,7 +25,8 @@ struct FactorDBMirrorResp {
 }
 
 /// factor the product of ns, take advantage of the known product.
-pub fn factor<const N: usize>(ns: [&BigUint; N]) -> anyhow::Result<[Vec<(BigUint, u32)>; N]> {
+#[allow(clippy::type_complexity)]
+pub fn factor<const N: usize>(ns: [&BigUint; N]) -> Result<[Vec<(BigUint, u32)>; N], Box<dyn Error>> {
     #[inline]
     fn from_cbor(cbor: Cbor) -> Option<BigUint> {
         match cbor {
@@ -52,7 +53,7 @@ pub fn factor<const N: usize>(ns: [&BigUint; N]) -> anyhow::Result<[Vec<(BigUint
 
     'outer: for (i, n) in ns.into_iter().enumerate() {
         if n.is_one() { continue; } // just leave empty.
-        for (j, &m) in unsafe { ns.get_unchecked(..i).iter().enumerate() } {
+        for (j, &m) in unsafe { ns.get_unchecked(..i) }.iter().enumerate() {
             if *m == *n {
                 let [ri, rj] = unsafe { result.get_disjoint_unchecked_mut([i, j]) };
                 ri.clone_from(rj);
@@ -76,17 +77,16 @@ pub fn factor<const N: usize>(ns: [&BigUint; N]) -> anyhow::Result<[Vec<(BigUint
             factors,
         } = ciborium::de::from_reader(&*res)?;
 
-        let factors = if let Some(Cbor::Map(factors)) = factors {
-            factors.into_iter().map(|(cbor, exp)|
-                Some((from_cbor(cbor)?, u32::try_from(exp.as_integer()?).ok()? * exponent))
-            ).collect::<Option<_>>()
-        } else {
-            return Err(anyhow::Error::msg(error.unwrap_or_else(|| "factorization failed".to_string())));
-        };
-        // SAFETY: result and ns are both array of size N.
-        unsafe {
-            *result.get_unchecked_mut(i) = factors.ok_or_else(||anyhow::anyhow!("failed to construct factorization expression"))?;
+        if let Some(Cbor::Map(factors)) = factors
+            && let Some(factors) = factors.into_iter().map(
+                |(cbor, exp)| Some((from_cbor(cbor)?, u32::try_from(exp.as_integer()?).ok()? * exponent))
+            ).collect() {
+            // SAFETY: result and ns are both array of size N.
+            *unsafe { result.get_unchecked_mut(i) } = factors;
+            continue;
         }
+
+        return Err(error.unwrap_or_else(|| format!("factorization of {n} failed")).into());
     }
 
     Ok(result)

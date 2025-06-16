@@ -7,7 +7,6 @@ description = "Implementation of ideal unique factorization of quadratic integer
 repository = "https://github.com/yhx-12243/q"
 
 [dependencies]
-anyhow = { version = "1.0.98", features = ["backtrace"] }
 ciborium = "0.2.2"
 clap = { version = "4.5.40", features = ["derive", "unicode", "wrap_help", "env", "string", "unstable-v5"] }
 clap_derive = { version = "4.5.40", features = ["unstable-v5"] }

@@ -51,7 +51,7 @@ struct Args {
 
 static CONFIG: std::sync::OnceLock<Args> = std::sync::OnceLock::new();
 
-fn main() -> anyhow::Result<()> {
+fn main() -> Result<(), Box<dyn core::error::Error>> {
     use clap::Parser;
     use ideal::Ideal;
 
@@ -60,7 +60,7 @@ fn main() -> anyhow::Result<()> {
 
     CONFIG
         .set(args)
-        .map_err(|_| anyhow::anyhow!("unable to set config"))?;
+        .map_err(|_| Box::<dyn core::error::Error>::from("unable to set config"))?;
 
     let mut ideal = Ideal::read(std::io::stdin().lock())?;
 
