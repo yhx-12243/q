@@ -67,26 +67,13 @@ fn main() -> Result<(), Box<dyn core::error::Error>> {
     ideal.reduce();
 
     {
-        use core::{
-            fmt::{
-                Arguments,
-                rt::{Argument, ArgumentType},
-            },
-            marker::PhantomData,
-            ptr::NonNull,
-        };
+        use core::fmt::from_fn;
         use std::io::Write;
 
         let fmt = if plain_tex { Ideal::tex } else { Ideal::latex };
 
         let mut stdout = std::io::stdout().lock();
-        stdout.write_fmt(Arguments::new_v1(&["", "="], &[Argument {
-            ty: ArgumentType::Placeholder {
-                value: NonNull::from_ref(&ideal).cast(),
-                formatter: unsafe { core::mem::transmute(fmt) },
-                _lifetime: PhantomData,
-            },
-        }]))?;
+        write!(stdout, "{}=", from_fn(|f| fmt(&ideal, f)))?;
 
         let ideals = ideal.factor()?;
 
@@ -95,13 +82,7 @@ fn main() -> Result<(), Box<dyn core::error::Error>> {
         }
 
         for (ideal, exp) in ideals {
-            stdout.write_fmt(Arguments::new_v1(&[""], &[Argument {
-                ty: ArgumentType::Placeholder {
-                    value: NonNull::from_ref(&ideal).cast(),
-                    formatter: unsafe { core::mem::transmute(fmt) },
-                    _lifetime: PhantomData,
-                },
-            }]))?;
+            write!(stdout, "{}", from_fn(|f| fmt(&ideal, f)))?;
             if exp > 1 {
                 write!(stdout, "^{{{exp}}}")?;
             }
