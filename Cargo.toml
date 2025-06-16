@@ -8,18 +8,15 @@ repository = "https://github.com/yhx-12243/q"
 
 [dependencies]
 anyhow = { version = "1.0.98", features = ["backtrace"] }
-bytes = { version = "1.10.0", features = ["serde"] }
 ciborium = "0.2.2"
 clap = { version = "4.5.40", features = ["derive", "unicode", "wrap_help", "env", "string", "unstable-v5"] }
 clap_derive = { version = "4.5.40", features = ["unstable-v5"] }
-futures-executor = "0.3.31"
-futures-util = { version = "0.3.31", features = ["unstable"] }
 hashbrown = { version = "0.15.4", features = ["serde"] }
 num-bigint = { git = "https://github.com/divergentdave/num-bigint", branch = "rand-0.9", features = ["rand"] }
 num-integer = "0.1.46"
 num-traits = "0.2.19"
 rand = { version = "0.9.1", features = ["log", "nightly"] }
-reqwest = { version = "0.12.20", default-features = false, features = ["native-tls"] }
+reqwest = { version = "0.12.20", default-features = false, features = ["blocking", "native-tls"] }
 serde = { version = "1.0.219", features = ["derive"] }
 serde_json = { version = "1.0.140", features = ["float_roundtrip"] }
 smallvec = { version = "2.0.0-alpha.11", features = ["may_dangle", "specialization"] }

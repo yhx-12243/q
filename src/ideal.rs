@@ -6,7 +6,6 @@ use core::{
 };
 use std::io;
 
-use futures_executor::block_on;
 use num_bigint::{BigInt, BigUint, IntDigits, Sign};
 use num_integer::Integer;
 use num_traits::{One, Zero};
@@ -237,7 +236,7 @@ impl Ideal {
 
         // eprintln!("common = {common}, remain = {self}, norm = {norm}");
 
-        let [common_factors, norm_factors] = block_on(factor([&common, &norm]))?;
+        let [common_factors, norm_factors] = factor([&common, &norm])?;
         let mut common_factors = common_factors.iter().peekable();
         let mut norm_factors = norm_factors.iter().peekable();
 

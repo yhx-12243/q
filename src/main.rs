@@ -5,6 +5,7 @@
     fmt_internals,
     formatting_options,
     let_chains,
+    likely_unlikely,
     slice_ptr_get,
     stmt_expr_attributes,
 )]
@@ -31,7 +32,7 @@ struct Args {
     D: core::num::NonZeroI64,
     #[arg(
         long,
-        default_value = "https://3.145.200.48/factordb",
+        default_value = factor::DEFAULT_SERVER,
         value_name = "url",
         help = "The URL of the factordb mirror server"
     )]
