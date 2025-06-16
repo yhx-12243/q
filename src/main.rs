@@ -1,10 +1,10 @@
 #![feature(
+    box_patterns,
     debug_closure_helpers,
     exit_status_error,
     fmt_internals,
     formatting_options,
     let_chains,
-    non_null_from_ref,
     slice_ptr_get,
     stmt_expr_attributes,
 )]
@@ -31,11 +31,11 @@ struct Args {
     D: core::num::NonZeroI64,
     #[arg(
         long,
-        default_value = "./",
-        value_name = "dir",
-        help = "The directory of YAFU output"
+        default_value = "https://3.145.200.48/factordb",
+        value_name = "url",
+        help = "The URL of the factordb mirror server"
     )]
-    dir: std::path::PathBuf,
+    factordb_mirror_server: String,
     #[arg(
         short = 'M',
         long,
@@ -57,7 +57,6 @@ fn main() -> anyhow::Result<()> {
     let args @ Args { plain_tex, .. } = Args::parse();
     unsafe { discriminant::set(args.D, args.plain_tex)? };
 
-    std::fs::create_dir_all(&args.dir)?;
     CONFIG
         .set(args)
         .map_err(|_| anyhow::anyhow!("unable to set config"))?;

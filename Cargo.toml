@@ -1,6 +1,6 @@
 [package]
 name = "q"
-version = "1.1.3"
+version = "1.2.0"
 authors = ["jkjkmxmx <yhx12243@gmail.com>"]
 edition = "2024"
 description = "Implementation of ideal unique factorization of quadratic integer domains"
@@ -8,14 +8,18 @@ repository = "https://github.com/yhx-12243/q"
 
 [dependencies]
 anyhow = { version = "1.0.98", features = ["backtrace"] }
-clap = { version = "4.5.37", features = ["derive", "unicode", "wrap_help", "env", "string", "unstable-v5"] }
-clap_derive = { version = "4.5.32", features = ["unstable-v5"] }
-hashbrown = { version = "0.15.3", features = ["serde"] }
-nix = { version = "0.29.0", features = ["signal"] }
+bytes = { version = "1.10.0", features = ["serde"] }
+ciborium = "0.2.2"
+clap = { version = "4.5.40", features = ["derive", "unicode", "wrap_help", "env", "string", "unstable-v5"] }
+clap_derive = { version = "4.5.40", features = ["unstable-v5"] }
+futures-executor = "0.3.31"
+futures-util = { version = "0.3.31", features = ["unstable"] }
+hashbrown = { version = "0.15.4", features = ["serde"] }
 num-bigint = { git = "https://github.com/divergentdave/num-bigint", branch = "rand-0.9", features = ["rand"] }
 num-integer = "0.1.46"
 num-traits = "0.2.19"
-rand = { version = "0.9.0", features = ["log", "nightly"] }
+rand = { version = "0.9.1", features = ["log", "nightly"] }
+reqwest = { version = "0.12.20", default-features = false, features = ["native-tls"] }
 serde = { version = "1.0.219", features = ["derive"] }
 serde_json = { version = "1.0.140", features = ["float_roundtrip"] }
 smallvec = { version = "2.0.0-alpha.11", features = ["may_dangle", "specialization"] }

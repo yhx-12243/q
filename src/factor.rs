@@ -1,56 +1,52 @@
-use core::{
-    fmt,
-    sync::atomic::{AtomicI32, Ordering},
-    time::Duration,
-};
-use std::{
-    borrow::Cow,
-    collections::{
-        BTreeMap,
-        btree_map::Entry::{Occupied, Vacant},
-    },
-    fs,
-    io::{BufRead, BufReader, Write},
-    path::PathBuf,
-    process::{Command, Stdio},
-    time::Instant,
-};
+use core::time::Duration;
 
-use nix::{
-    sys::signal::{SigHandler, Signal, kill, signal},
-    unistd::Pid,
+use bytes::Bytes;
+use ciborium::Value as Cbor;
+use futures_util::{
+    FutureExt,
+    future::{err, join_all},
 };
 use num_bigint::BigUint;
 use num_traits::One;
+use reqwest::{Client, Response};
 use serde::Deserialize;
 
 use crate::CONFIG;
 
-struct DropGuard(PathBuf);
-
-impl Drop for DropGuard {
-    fn drop(&mut self) {
-        let _ = fs::remove_file(&self.0);
-    }
-}
-
 #[derive(Deserialize)]
-struct YafuOutput<'a> {
-    #[serde(borrow, rename = "factors-prime")]
-    factors_p: Option<Vec<Cow<'a, str>>>,
-    #[serde(borrow, rename = "factors-prp")]
-    factors_prp: Option<Vec<Cow<'a, str>>>,
-}
-
-static CHILD_PID: AtomicI32 = AtomicI32::new(0);
-
-extern "C" fn handler(_signal: i32) {
-    let child_pid = CHILD_PID.load(Ordering::Acquire);
-    let _ = kill(Pid::from_raw(child_pid), Signal::SIGTERM);
+struct FactorDBMirrorResp {
+    #[serde(rename = "e")]
+    exponent: u32,
+    // #[serde(rename = "s")]
+    // status: String,
+    #[serde(rename = "E")]
+    error: Option<String>,
+    #[serde(rename = "f")]
+    factors: Option<Vec<(Cbor, u32)>>,
 }
 
 /// factor the product of ns, take advantage of the known product.
-pub fn factor<const N: usize>(ns: [&BigUint; N]) -> anyhow::Result<[Vec<(BigUint, u32)>; N]> {
+pub async fn factor<const N: usize>(ns: [&BigUint; N]) -> anyhow::Result<[Vec<(BigUint, u32)>; N]> {
+    #[inline]
+    fn extract_body(res: reqwest::Result<Response>) -> impl Future<Output = reqwest::Result<Bytes>> {
+        match res {
+            Ok(res) => res.bytes().left_future(),
+            Err(e) => err(e).right_future(),
+        }
+    }
+
+    #[inline]
+    fn from_cbor(cbor: Cbor) -> Option<BigUint> {
+        match cbor {
+            Cbor::Integer(n) => Some(BigUint::from(u128::try_from(n).ok()?)),
+            Cbor::Tag(2, box Cbor::Bytes(mut bytes)) => {
+                bytes.reverse();
+                Some(BigUint::from_bytes_le(&bytes))
+            }
+            _ => None,
+        }
+    }
+
     let mut result = [const { Vec::new() }; N];
     let mut dup = [usize::MAX; N];
 
@@ -58,57 +54,25 @@ pub fn factor<const N: usize>(ns: [&BigUint; N]) -> anyhow::Result<[Vec<(BigUint
         return Ok(result);
     }
 
-    let t1 = Instant::now();
-    #[allow(clippy::transmute_undefined_repr)]
-    let td = unsafe { core::mem::transmute::<Instant, Duration>(t1) };
-    let mut path = CONFIG
-        .get()
-        .map_or_else(|| PathBuf::from("./"), |config| config.dir.clone());
-    path.reserve(32); // sufficient
-    path.push("q");
-    fmt::LowerHex::fmt(&td.as_nanos(), &mut fmt::Formatter::new(path.as_mut_os_string(), fmt::FormattingOptions::new()))?;
-    path.push(".json");
-    let mut child = Command::new("yafu")
-        .arg("factor(@)")
-        .arg("-factorjson")
-        .arg(&path)
-        .stdin(Stdio::piped())
-        .stdout(Stdio::null())
-        .stderr(Stdio::null())
-        .spawn()?;
-    let stdin = child
-        .stdin
-        .as_mut()
-        .ok_or_else(|| anyhow::anyhow!("no stdin"))?;
-    for (i, n) in ns.into_iter().enumerate() {
-        if n.is_one() { continue; }
-        'outer: {
-            for (j, m) in unsafe { ns.get_unchecked(..i).iter().enumerate() } {
-                if *m == n {
-                    dup[i] = j;
-                    break 'outer;
-                }
+    let url = CONFIG.get().map_or_else(
+        || "https://3.145.200.48/factordb",
+        |config| &*config.factordb_mirror_server,
+    );
+
+    let client = Client::builder().connect_timeout(const { Duration::from_secs(5) }).build()?;
+
+    let futs = ns.into_iter().enumerate().filter_map(|(i, n)| {
+        if n.is_one() { return None; }
+        for (j, &m) in unsafe { ns.get_unchecked(..i).iter().enumerate() } {
+            if m == n {
+                dup[i] = j;
+                return None;
             }
-            writeln!(stdin, "{n}")?;
         }
-    }
+        Some(client.post(url).query(&[("factor", "")]).body(n.to_bytes_be()).send().then(extract_body))
+    });
+    let mut ress = join_all(futs).await.into_iter();
 
-    let r = unsafe {
-        CHILD_PID.store(child.id().cast_signed(), Ordering::Release);
-        signal(Signal::SIGTERM, SigHandler::Handler(handler))?;
-        let r = child.wait()?;
-        signal(Signal::SIGTERM, SigHandler::SigDfl)?;
-        r
-    };
-
-    r.exit_ok()?;
-
-    let file = fs::File::open(&path)?;
-
-    let _guard = DropGuard(path);
-    let mut reader = BufReader::new(file);
-
-    let mut buf = String::new();
     for (i, n) in ns.into_iter().enumerate() {
         if n.is_one() { continue; } // just leave empty.
         unsafe {
@@ -119,27 +83,21 @@ pub fn factor<const N: usize>(ns: [&BigUint; N]) -> anyhow::Result<[Vec<(BigUint
                 continue;
             }
         }
-        buf.clear();
-        reader.read_line(&mut buf)?;
-        let YafuOutput {
-            factors_p,
-            factors_prp,
-        } = serde_json::from_str(&buf)?;
-        let mut map = BTreeMap::new();
-        for factor in factors_p
-            .into_iter()
-            .flatten()
-            .chain(factors_prp.into_iter().flatten())
-        {
-            let factor = factor.parse()?;
-            match map.entry(factor) {
-                Occupied(mut occupied) => *occupied.get_mut() += 1,
-                Vacant(vacant) => { vacant.insert(1); },
-            }
-        }
+        let res = unsafe { ress.next().unwrap_unchecked() }?;
+        let FactorDBMirrorResp {
+            exponent,
+            error,
+            factors,
+        } = ciborium::de::from_reader(&*res)?;
+
+        let factors = if let Some(factors) = factors {
+            factors.into_iter().map(|(cbor, exp)| Some((from_cbor(cbor)?, exp * exponent))).collect::<Option<_>>()
+        } else {
+            return Err(anyhow::Error::msg(error.unwrap_or_else(|| "factorization failed".to_string())));
+        };
         // SAFETY: result and ns are both array of size N.
         unsafe {
-            *result.get_unchecked_mut(i) = map.into_iter().collect();
+            *result.get_unchecked_mut(i) = factors.ok_or_else(||anyhow::anyhow!("failed to construct factorization expression"))?;
         }
     }
 
@@ -150,14 +108,15 @@ pub fn factor<const N: usize>(ns: [&BigUint; N]) -> anyhow::Result<[Vec<(BigUint
 mod tests {
     use core::str::FromStr;
 
-    use num::BigUint;
+    use futures_executor::block_on;
+    use num_bigint::BigUint;
 
     use super::factor;
 
     #[test]
     #[rustfmt::skip]
     fn test_factor() {
-        let result = factor([
+        let result = block_on(factor([
             &BigUint::from(2_021_010_889u32),
             &BigUint::from(2_021_011_832u32),
             &BigUint::from(1u32),
@@ -165,7 +124,7 @@ mod tests {
             &BigUint::from_str(&"4".repeat(67)).unwrap(),
             &BigUint::from_str(&"4".repeat(67)).unwrap(),
             &BigUint::from_str(&"4".repeat(67)).unwrap(),
-        ]).unwrap();
+        ])).unwrap();
         assert_eq!(
             result,
             [

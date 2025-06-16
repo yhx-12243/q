@@ -243,7 +243,7 @@ impl From<BigInt> for QI {
 mod tests {
     use core::num::NonZeroI64;
 
-    use num::BigInt;
+    use num_bigint::BigInt;
 
     use super::{QI, discriminant};
 

@@ -83,7 +83,7 @@ pub fn quadratic_residue(n: &BigUint, p: &BigUint) -> Option<BigUint> {
 mod test {
     use core::str::FromStr;
 
-    use num::BigUint;
+    use num_bigint::BigUint;
 
     use super::{jacobi, quadratic_residue};
 
