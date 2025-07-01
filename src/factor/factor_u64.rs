@@ -111,7 +111,7 @@ pub(super) fn power_mod(mut a: u64, mut n: u64, m: u64, mut c: u64) -> u64 {
     c
 }
 
-#[allow(clippy::many_single_char_names)]
+#[allow(clippy::manual_is_multiple_of, clippy::many_single_char_names)]
 pub(super) fn miller_rabin(n: u64) -> bool {
     const TEST: [u64; 8] = [2, 3, 5, 7, 11, 13, 359, 911];
 
@@ -179,6 +179,7 @@ fn push(p: u64, a: u32, result: &mut BTreeMap<u64, u32>) {
     }
 }
 
+#[allow(clippy::manual_is_multiple_of)]
 pub fn factor_inner<T: RngCore + ?Sized>(mut n: u64, result: &mut BTreeMap<u64, u32>, rng: &mut T) {
     while n != 1 {
         if n >= SIEVE_MAX {
