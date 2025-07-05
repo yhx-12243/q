@@ -4,7 +4,6 @@
     exit_status_error,
     fmt_internals,
     formatting_options,
-    let_chains,
     likely_unlikely,
     slice_ptr_get,
     stmt_expr_attributes,
