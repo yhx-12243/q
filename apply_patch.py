@@ -154,13 +154,13 @@ def main():
             delete = None
             try:
                 res = get(url, verify=False)
-                target = patches / f'{std}.patch'
+                target_file = patches / f'{std}.patch'
                 with NamedTemporaryFile(delete=False) as f:
                     delete = f.name
                     for chunk in res.iter_content(chunk_size=65536):
                         if chunk:
                             f.write(chunk)
-                move(f.name, target)
+                move(f.name, target_file)
                 delete = None
             except Exception as e:
                 print('\x1b[1;31mfetch failed:\x1b[0m', e)
