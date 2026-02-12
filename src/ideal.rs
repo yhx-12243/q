@@ -85,7 +85,7 @@ impl Ideal {
     }
 
     #[inline]
-    pub fn is_zero(&self) -> bool {
+    pub const fn is_zero(&self) -> bool {
         self.0.is_empty()
     }
 

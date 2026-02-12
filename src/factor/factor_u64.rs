@@ -6,8 +6,8 @@ use std::collections::{
 
 use num_integer::Integer;
 use rand::{
-    RngCore, SeedableRng, TryRngCore,
-    rngs::{OsRng, SmallRng},
+    Rng, SeedableRng, TryRng,
+    rngs::{SmallRng, SysRng},
 };
 
 mod small_primes {
@@ -180,7 +180,7 @@ fn push(p: u64, a: u32, result: &mut BTreeMap<u64, u32>) {
 }
 
 #[allow(clippy::manual_is_multiple_of)]
-pub fn factor_inner<T: RngCore + ?Sized>(mut n: u64, result: &mut BTreeMap<u64, u32>, rng: &mut T) {
+pub fn factor_inner<T: Rng + ?Sized>(mut n: u64, result: &mut BTreeMap<u64, u32>, rng: &mut T) {
     while n != 1 {
         if n >= SIEVE_MAX {
             if miller_rabin(n) {
@@ -215,7 +215,7 @@ pub fn factor_inner<T: RngCore + ?Sized>(mut n: u64, result: &mut BTreeMap<u64, 
 
 pub fn factor(n: u64) -> BTreeMap<u64, u32> {
     let mut result = BTreeMap::new();
-    let mut rng = SmallRng::seed_from_u64(OsRng.try_next_u64().unwrap_or_default());
+    let mut rng = SmallRng::seed_from_u64(SysRng.try_next_u64().unwrap_or_default());
     factor_inner(n, &mut result, &mut rng);
     result
 }
