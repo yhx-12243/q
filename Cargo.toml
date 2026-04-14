@@ -10,7 +10,7 @@ repository = "https://github.com/yhx-12243/q"
 anyhow = { version = "1.0.95", features = ["backtrace"] }
 clap = { version = "4.5.29", features = ["derive", "unicode", "wrap_help", "env", "string", "unstable-v5"] }
 clap_derive = { version = "4.5.28", features = ["unstable-v5"] }
-hashbrown = { version = "0.15.2", features = ["serde"] }
+hashbrown = { version = "0.17.0", features = ["serde"] }
 nix = { version = "0.29.0", features = ["signal"] }
 num = { version = "0.4.3", features = ["rand"] }
 rand = { version = "0.8.5", features = ["log", "nightly"] } # TODO: Update to 0.9 once rust-num/num-bigint#317 gets merged
