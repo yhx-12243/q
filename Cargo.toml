@@ -16,7 +16,7 @@ num = { version = "0.4.3", features = ["rand"] }
 rand = { version = "0.8.5", features = ["log", "nightly"] } # TODO: Update to 0.9 once rust-num/num-bigint#317 gets merged
 serde = { version = "1.0.217", features = ["derive"] }
 serde_json = { version = "1.0.138", features = ["float_roundtrip"] }
-smallvec = { version = "2.0.0-alpha.10", features = ["may_dangle", "specialization"] }
+smallvec = { version = "2.0.0-alpha.12", features = ["may_dangle", "specialization"] }
 
 [lints.rust]
 internal_features  = { level = "allow", priority = 1 }
