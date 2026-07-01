@@ -1,6 +1,6 @@
 use core::ptr::NonNull;
 
-use num_bigint::{BigUint, IntDigits, RandBigInt};
+use num_bigint::{BigRng010, BigUint, IntDigits};
 use num_integer::Integer;
 use num_traits::{One, Zero};
 use rand::rng;

@@ -1,9 +1,8 @@
 #![feature(
     box_patterns,
+    core_io_internals,
     debug_closure_helpers,
-    exit_status_error,
     fmt_internals,
-    formatting_options,
     likely_unlikely,
     slice_ptr_get,
     stmt_expr_attributes,

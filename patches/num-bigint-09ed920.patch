@@ -1,18 +1,35 @@
 diff --git a/src/bigint.rs b/src/bigint.rs
-index 03cc617..6dc4dcd 100644
+index b4f84b9..16d89bc 100644
 --- a/src/bigint.rs
 +++ b/src/bigint.rs
-@@ -513,7 +513,7 @@ impl Roots for BigInt {
-             "root of degree {n} is imaginary"
+@@ -514,7 +514,7 @@ impl Roots for BigInt {
+             n
          );
  
--        Self::from_biguint(self.sign, self.data.nth_root(n))
-+        Self::from_biguint(self.sign, self.data.nth_root(n.into()))
+-        BigInt::from_biguint(self.sign, self.data.nth_root(n))
++        BigInt::from_biguint(self.sign, self.data.nth_root(n.into()))
      }
  
      fn sqrt(&self) -> Self {
+@@ -1097,8 +1097,14 @@ impl BigInt {
+ 
+     /// Returns the truncated principal `n`th root of `self` --
+     /// See [`num_integer::Roots::nth_root()`].
+-    pub fn nth_root(&self, n: u32) -> Self {
+-        Roots::nth_root(self, n)
++    pub fn nth_root(&self, n: u64) -> Self {
++        assert!(
++            !(self.is_negative() && n.is_even()),
++            "root of degree {} is imaginary",
++            n
++        );
++
++        BigInt::from_biguint(self.sign, self.data.nth_root(n))
+     }
+ 
+     /// Returns the number of least-significant bits that are zero,
 diff --git a/src/biguint.rs b/src/biguint.rs
-index b44e347..5397e6f 100644
+index 196fa32..df90316 100644
 --- a/src/biguint.rs
 +++ b/src/biguint.rs
 @@ -29,6 +29,8 @@ mod shift;
@@ -24,7 +41,7 @@ index b44e347..5397e6f 100644
  
  /// A big unsigned integer type.
  pub struct BigUint {
-@@ -366,65 +368,7 @@ impl Roots for BigUint {
+@@ -367,65 +369,7 @@ impl Roots for BigUint {
      // Reference:
      // Brent & Zimmermann, Modern Computer Arithmetic, v0.5.9, Algorithm 1.14
      fn nth_root(&self, n: u32) -> Self {
@@ -46,7 +63,7 @@ index b44e347..5397e6f 100644
 -        let bits = self.bits();
 -        let n64 = u64::from(n);
 -        if bits <= n64 {
--            return Self::one();
+-            return BigUint::one();
 -        }
 -
 -        // If we fit in `u64`, compute the root that way.
@@ -62,7 +79,7 @@ index b44e347..5397e6f 100644
 -                use num_traits::FromPrimitive;
 -
 -                // We fit in `f64` (lossy), so get a better initial guess from that.
--                Self::from_f64((f.ln() / f64::from(n)).exp()).unwrap()
+-                BigUint::from_f64((f.ln() / f64::from(n)).exp()).unwrap()
 -            }
 -            _ => {
 -                // Try to guess by scaling down such that it does fit in `f64`.
@@ -73,13 +90,13 @@ index b44e347..5397e6f 100644
 -                if scale < bits && bits - scale > n64 {
 -                    (self >> scale).nth_root(n) << root_scale
 -                } else {
--                    Self::one() << max_bits
+-                    BigUint::one() << max_bits
 -                }
 -            }
 -        };
 -
 -        #[cfg(not(feature = "std"))]
--        let guess = Self::one() << max_bits;
+-        let guess = BigUint::one() << max_bits;
 -
 -        let n_min_1 = n - 1;
 -        fixpoint(guess, max_bits, move |s| {
@@ -91,10 +108,10 @@ index b44e347..5397e6f 100644
      }
  
      // Reference:
-@@ -1006,8 +950,65 @@ impl BigUint {
+@@ -981,8 +925,65 @@ impl BigUint {
+ 
      /// Returns the truncated principal `n`th root of `self` --
      /// see [Roots::nth_root](https://docs.rs/num-integer/0.1/num_integer/trait.Roots.html#tymethod.nth_root).
-     #[must_use]
 -    pub fn nth_root(&self, n: u32) -> Self {
 -        Roots::nth_root(self, n)
 +    pub fn nth_root(&self, n: u64) -> Self {
@@ -115,7 +132,7 @@ index b44e347..5397e6f 100644
 +        // The root of non-zero values less than 2ⁿ can only be 1.
 +        let bits = self.bits();
 +        if bits <= n {
-+            return Self::one();
++            return BigUint::one();
 +        }
 +
 +        // If we fit in `u64`, compute the root that way.
@@ -131,7 +148,7 @@ index b44e347..5397e6f 100644
 +                use num_traits::FromPrimitive;
 +
 +                // We fit in `f64` (lossy), so get a better initial guess from that.
-+                Self::from_f64((f.ln() / (n as f64)).exp()).unwrap()
++                BigUint::from_f64((f.ln() / (n as f64)).exp()).unwrap()
 +            }
 +            _ => {
 +                // Try to guess by scaling down such that it does fit in `f64`.
@@ -142,13 +159,13 @@ index b44e347..5397e6f 100644
 +                if scale < bits && bits - scale > n {
 +                    (self >> scale).nth_root(n) << root_scale
 +                } else {
-+                    Self::one() << max_bits
++                    BigUint::one() << max_bits
 +                }
 +            }
 +        };
 +
 +        #[cfg(not(feature = "std"))]
-+        let guess = Self::one() << max_bits;
++        let guess = BigUint::one() << max_bits;
 +
 +        let n_min_1 = n - 1;
 +        fixpoint(guess, max_bits, move |s| {
@@ -159,7 +176,7 @@ index b44e347..5397e6f 100644
      }
  
      /// Returns the number of least-significant bits that are zero,
-@@ -1098,7 +1099,7 @@ impl num_traits::ToBytes for BigUint {
+@@ -1068,7 +1069,7 @@ impl num_traits::ToBytes for BigUint {
      }
  }
  
@@ -169,7 +186,7 @@ index b44e347..5397e6f 100644
      fn digits_mut(&mut self) -> &mut Vec<BigDigit>;
      fn normalize(&mut self);
 diff --git a/src/biguint/division.rs b/src/biguint/division.rs
-index 0c1b462..2877c60 100644
+index 3dfb0bb..3fc926f 100644
 --- a/src/biguint/division.rs
 +++ b/src/biguint/division.rs
 @@ -82,7 +82,7 @@ fn div_half(rem: BigDigit, digit: BigDigit, divisor: BigDigit) -> (BigDigit, Big
@@ -178,20 +195,20 @@ index 0c1b462..2877c60 100644
  #[inline]
 -pub(super) fn div_rem_digit(mut a: BigUint, b: BigDigit) -> (BigUint, BigDigit) {
 +pub fn div_rem_digit(mut a: BigUint, b: BigDigit) -> (BigUint, BigDigit) {
-     assert!((b != 0), "attempt to divide by zero");
- 
-     let mut rem = 0;
-@@ -105,7 +105,7 @@ pub(super) fn div_rem_digit(mut a: BigUint, b: BigDigit) -> (BigUint, BigDigit)
+     if b == 0 {
+         panic!("attempt to divide by zero")
+     }
+@@ -107,7 +107,7 @@ pub(super) fn div_rem_digit(mut a: BigUint, b: BigDigit) -> (BigUint, BigDigit)
  }
  
  #[inline]
 -fn rem_digit(a: &BigUint, b: BigDigit) -> BigDigit {
 +pub fn rem_digit(a: &BigUint, b: BigDigit) -> BigDigit {
-     assert!((b != 0), "attempt to divide by zero");
- 
-     let mut rem = 0;
+     if b == 0 {
+         panic!("attempt to divide by zero")
+     }
 diff --git a/src/biguint/multiplication.rs b/src/biguint/multiplication.rs
-index 9c9de87..f8f46f3 100644
+index e9d2138..b09a29f 100644
 --- a/src/biguint/multiplication.rs
 +++ b/src/biguint/multiplication.rs
 @@ -64,7 +64,7 @@ fn bigint_from_slice(slice: &[BigDigit]) -> BigInt {
@@ -204,10 +221,10 @@ index 9c9de87..f8f46f3 100644
      if let Some(&0) = b.first() {
          if let Some(nz) = b.iter().position(|&d| d != 0) {
 diff --git a/src/lib.rs b/src/lib.rs
-index 314dc89..0830a1a 100644
+index 85a294d..fd54dad 100644
 --- a/src/lib.rs
 +++ b/src/lib.rs
-@@ -213,6 +213,7 @@ impl<T> fmt::Display for TryFromBigIntError<T> {
+@@ -227,6 +227,7 @@ impl<T> fmt::Display for TryFromBigIntError<T> {
  
  pub use crate::biguint::BigUint;
  pub use crate::biguint::ToBigUint;
@@ -215,12 +232,12 @@ index 314dc89..0830a1a 100644
  pub use crate::biguint::U32Digits;
  pub use crate::biguint::U64Digits;
  
-@@ -220,6 +221,8 @@ pub use crate::bigint::BigInt;
+@@ -234,6 +235,8 @@ pub use crate::bigint::BigInt;
  pub use crate::bigint::Sign;
  pub use crate::bigint::ToBigInt;
  
 +pub use crate::biguint::{div_rem_digit, mac3, rem_digit};
 +
- #[cfg(feature = "rand")]
- #[cfg_attr(docsrs, doc(cfg(feature = "rand")))]
- pub use crate::bigrand::{RandBigInt, RandomBits, UniformBigInt, UniformBigUint};
+ #[cfg(feature = "rand_core_0_10")]
+ pub use crate::bigrand::BigRng010;
+ 

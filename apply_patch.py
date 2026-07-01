@@ -147,13 +147,12 @@ def main():
         pass
 
     if args.std_patch_server:
-        disable_warnings(InsecureRequestWarning)
         for std in STD:
             print(f'\x1b[35m======== Downloading \x1b[1;34m{std}\x1b[22;35m ========\x1b[0m\n')
             url = args.std_patch_server + ('' if args.std_patch_server.endswith('/') else '/') + std + '.patch'
             delete = None
             try:
-                res = get(url, verify=False)
+                res = get(url)
                 target_file = patches / f'{std}.patch'
                 with NamedTemporaryFile(delete=False) as f:
                     delete = f.name

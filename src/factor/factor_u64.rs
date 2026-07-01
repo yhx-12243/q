@@ -10,8 +10,8 @@ use rand::{
     rngs::{SmallRng, SysRng},
 };
 
+#[allow(clippy::large_const_arrays, clippy::many_single_char_names)]
 mod small_primes {
-    #[allow(clippy::many_single_char_names)]
     const __GENERATE_SMALL_PRIMES: ([u16; 6542], [u16; 65536]) = {
         let mut p = [0; 6542];
         let mut c = [u16::MAX; 0x10000];
@@ -41,7 +41,6 @@ mod small_primes {
         (p, c)
     };
     pub const SMALL_PRIMES: [u16; 6542] = __GENERATE_SMALL_PRIMES.0;
-    #[allow(clippy::large_const_arrays)]
     pub const LEAST_FACTORS: [u16; 65536] = __GENERATE_SMALL_PRIMES.1;
 }
 
