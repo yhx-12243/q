@@ -1,22 +1,24 @@
 [package]
 name = "q"
-version = "1.1.3"
+version = "1.2.0"
 authors = ["jkjkmxmx <yhx12243@gmail.com>"]
 edition = "2024"
 description = "Implementation of ideal unique factorization of quadratic integer domains"
 repository = "https://github.com/yhx-12243/q"
 
 [dependencies]
-anyhow = { version = "1.0.95", features = ["backtrace"] }
-clap = { version = "4.5.29", features = ["derive", "unicode", "wrap_help", "env", "string", "unstable-v5"] }
-clap_derive = { version = "4.5.28", features = ["unstable-v5"] }
-hashbrown = { version = "0.15.2", features = ["serde"] }
-nix = { version = "0.29.0", features = ["signal"] }
-num = { version = "0.4.3", features = ["rand"] }
-rand = { version = "0.8.5", features = ["log", "nightly"] } # TODO: Update to 0.9 once rust-num/num-bigint#317 gets merged
-serde = { version = "1.0.217", features = ["derive"] }
-serde_json = { version = "1.0.138", features = ["float_roundtrip"] }
-smallvec = { version = "2.0.0-alpha.10", features = ["may_dangle", "specialization"] }
+ciborium = "0.2.2"
+clap = { version = "4.6.1", features = ["derive", "unicode", "wrap_help", "env", "string", "unstable-v5"] }
+clap_derive = { version = "4.6.1", features = ["unstable-v5"] }
+hashbrown = { version = "0.17.1", features = ["nightly", "serde"] }
+num-bigint = { version = "0.5.0", features = ["rand_0_10"] }
+num-integer = "0.1.46"
+num-traits = "0.2.19"
+rand = { version = "0.10.2", features = ["log"] }
+reqwest = { version = "0.13.4", default-features = false, features = ["blocking", "native-tls", "query"] }
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = { version = "1.0.150", features = ["float_roundtrip"] }
+smallvec = { version = "2.0.0-alpha.12", features = ["may_dangle", "specialization"] }
 
 [lints.rust]
 internal_features  = { level = "allow", priority = 1 }
@@ -76,6 +78,12 @@ unseparated_literal_suffix = { level = "allow", priority = 1 }
 unused_trait_names = { level = "allow", priority = 1 }
 wildcard_enum_match_arm = { level = "allow", priority = 1 }
 
+many_single_char_names = { level = "allow", priority = 1 }
+
 [[bin]]
 name = "q"
 path = "src/main.rs"
+
+[profile.release]
+lto = true
+codegen-units = 1

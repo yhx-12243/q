@@ -1,15 +1,15 @@
 use core::{
     cmp::Ordering,
+    error::Error,
     fmt::{self, Formatter},
     mem::MaybeUninit,
     str::FromStr,
 };
 use std::io;
 
-use num::{
-    BigInt, BigUint, Integer, One, Zero,
-    bigint::{IntDigits, Sign},
-};
+use num_bigint::{BigInt, BigUint, IntDigits, Sign};
+use num_integer::Integer;
+use num_traits::{One, Zero};
 use smallvec::{SmallVec, smallvec_inline};
 
 use crate::{discriminant, factor::factor, pell, qi::QI, qr::quadratic_residue};
@@ -85,7 +85,7 @@ impl Ideal {
     }
 
     #[inline]
-    pub fn is_zero(&self) -> bool {
+    pub const fn is_zero(&self) -> bool {
         self.0.is_empty()
     }
 
@@ -211,7 +211,7 @@ impl Ideal {
     }
 
     #[allow(clippy::too_many_lines)]
-    pub fn factor(&mut self) -> anyhow::Result<Vec<(Self, u32)>> {
+    pub fn factor(&mut self) -> Result<Vec<(Self, u32)>, Box<dyn Error>> {
         self.reduce();
 
         let mut common = match &mut *self.0 {
@@ -274,21 +274,21 @@ impl Ideal {
             unsafe { is.set_len(2) };
             let [mut i1, mut i2] = is
                 .into_inner()
-                .map_err(|_| anyhow::anyhow!("wrong implementation of Ideal::factor_prime"))?;
+                .map_err(|_| Box::<dyn core::error::Error>::from("wrong implementation of Ideal::factor_prime"))?;
 
             // eprintln!("processing {p} {a1} {a2}");
 
             match num {
                 1 => {
                     if a2 != 0 {
-                        anyhow::bail!("contradiction on prime {p} (kind 1)");
+                        return Err(format!("contradiction on prime {p} (kind 1)").into());
                     }
                     // principal, skipped
                     result.push((i1, a1));
                 }
                 2 if i1 == i2 => {
                     if a2 > 1 {
-                        anyhow::bail!("contradiction on prime {p} (kind 2)");
+                        return Err(format!("contradiction on prime {p} (kind 2)").into());
                     }
                     if let Some(qi) = pell::work(d.get(), p) {
                         i1 = Self::principal(qi);
@@ -315,11 +315,11 @@ impl Ideal {
                                 if a1 != 0 { result.push((i1, a1)); }
                                 result.push((i2, a1 + a2));
                             }
-                            (x, y) => anyhow::bail!("contradiction on prime {p} (kind 3) : ({x}, {y})"),
+                            (x, y) => return Err(format!("contradiction on prime {p} (kind 3) : ({x}, {y})").into()),
                         }
                     }
                 }
-                _ => anyhow::bail!("unknown factor_prime error"),
+                _ => return Err("unknown factor_prime error".into()),
             }
         }
         Ok(result)
@@ -394,7 +394,7 @@ impl fmt::Display for Ideal {
 mod tests {
     use core::num::NonZeroI64;
 
-    use num::BigInt;
+    use num_bigint::BigInt;
     use smallvec::smallvec;
 
     use super::{Ideal, QI};

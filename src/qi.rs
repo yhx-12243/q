@@ -1,6 +1,8 @@
 use core::fmt::{self, Display, Formatter, Write};
 
-use num::{BigInt, BigUint, Integer, One, Signed, Zero, bigint::Sign};
+use num_bigint::{BigInt, BigUint, Sign};
+use num_integer::Integer;
+use num_traits::{One, Signed, Zero};
 
 use crate::discriminant;
 
@@ -241,7 +243,7 @@ impl From<BigInt> for QI {
 mod tests {
     use core::num::NonZeroI64;
 
-    use num::BigInt;
+    use num_bigint::BigInt;
 
     use super::{QI, discriminant};
 

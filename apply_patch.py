@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from argparse import ArgumentParser
+from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
 from enum import Enum
 from hashlib import sha1
 from os import unlink
@@ -9,12 +9,14 @@ from requests import get
 from shutil import move, rmtree
 from subprocess import run
 from tempfile import NamedTemporaryFile
+from urllib3 import disable_warnings
+from urllib3.exceptions import InsecureRequestWarning
 
 def parse_args():
-    parser = ArgumentParser()
-    parser.add_argument('--cargo-path', help='Cargo path of your system (default: ~/.cargo)', type=Path, default=Path.home() / '.cargo')
-    parser.add_argument('--rustup-path', help='Rustup path of your system (default: ~/.rustup)', type=Path, default=Path.home() / '.rustup')
-    parser.add_argument('--std-patch-server', help='Server to download std patch which updates frequently (default: https://43.138.56.99/rust-std-patches/)', default='https://43.138.56.99/rust-std-patches/')
+    parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
+    parser.add_argument('--cargo-path', help='Cargo path of your system', type=Path, default=Path.home() / '.cargo')
+    parser.add_argument('--rustup-path', help='Rustup path of your system', type=Path, default=Path.home() / '.rustup')
+    parser.add_argument('--std-patch-server', help='Server to download std patch which updates frequently', default='https://43.138.56.99/rust-std-patches/')
     return parser.parse_args()
 
 STD = ['core', 'alloc', 'std']
@@ -87,13 +89,13 @@ def patch_inner(patch, path, is_std=False):
 
 def patch_std(identifier, patch, stdlib):
     return (
-        f'\x1b[33m======== Applying \x1b[1;35m{identifier}\x1b[33m ========\x1b[0m',
+        f'\x1b[33m======== Applying \x1b[1;35m{identifier}\x1b[22;33m ========\x1b[0m',
         patch_inner(patch, stdlib / identifier, True),
     )
 
 def patch_cargo(identifier, patch, crates_io):
     return (
-        f'\x1b[36m======== Applying \x1b[1;35m{identifier}\x1b[36m ========\x1b[0m',
+        f'\x1b[36m======== Applying \x1b[1;35m{identifier}\x1b[22;36m ========\x1b[0m',
         patch_inner(patch, crates_io / identifier),
     )
 
@@ -102,7 +104,7 @@ def patch_git(identifier, patch, cargo_git):
     for d in cargo_git:
         if d.name.startswith(name) and (d / version).is_dir():
             return (
-                f'\x1b[32m======== Applying \x1b[1;35m{identifier}\x1b[32m ========\x1b[0m',
+                f'\x1b[32m======== Applying \x1b[1;35m{identifier}\x1b[22;32m ========\x1b[0m',
                 patch_inner(patch, d / version),
             )
     raise FileNotFoundError(f'Cannot find {identifier}')
@@ -122,9 +124,14 @@ def main():
         .stdout                                                                 \
         .split(None, 1)[0]                                                      \
         .decode()
-    print(f'Use toolchain: \x1b[1;36m{toolchain}\x1b[0m\n')
+    print(f'Use toolchain: \x1b[1;36m{toolchain}\x1b[0m')
+    for line in run(['rustc', '-vV'], capture_output = True, cwd=workspace).stdout.splitlines():
+        k, *v = line.split(b': ')
+        if k == b'host':
+            target = v[0].decode()
+    print(f'Use target: \x1b[1;33m{target}\x1b[0m\n')
 
-    run(['cargo', 'fetch'], cwd=workspace)
+    run(['cargo', 'fetch', '--target', target], cwd=workspace)
 
     stdlib = args.rustup_path / 'toolchains' / toolchain / 'lib/rustlib/src/rust/library'
     assert stdlib.is_dir()
@@ -141,18 +148,18 @@ def main():
 
     if args.std_patch_server:
         for std in STD:
-            print(f'\x1b[35m======== Downloading \x1b[1;34m{std}\x1b[35m ========\x1b[0m\n')
+            print(f'\x1b[35m======== Downloading \x1b[1;34m{std}\x1b[22;35m ========\x1b[0m\n')
             url = args.std_patch_server + ('' if args.std_patch_server.endswith('/') else '/') + std + '.patch'
             delete = None
             try:
                 res = get(url)
-                target = patches / f'{std}.patch'
+                target_file = patches / f'{std}.patch'
                 with NamedTemporaryFile(delete=False) as f:
                     delete = f.name
                     for chunk in res.iter_content(chunk_size=65536):
                         if chunk:
                             f.write(chunk)
-                move(f.name, target)
+                move(f.name, target_file)
                 delete = None
             except Exception as e:
                 print('\x1b[1;31mfetch failed:\x1b[0m', e)
@@ -181,7 +188,7 @@ def main():
                 need_fetch = True
 
     if need_fetch:
-        run(['cargo', 'fetch'], cwd=workspace)
+        run(['cargo', 'fetch', '--target', target], cwd=workspace)
 
     for (prompt, (patch, path, status)) in responses:
         print(prompt)

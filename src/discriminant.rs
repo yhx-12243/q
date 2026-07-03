@@ -1,4 +1,4 @@
-use core::num::NonZeroI64;
+use core::{error::Error, num::NonZeroI64};
 
 static mut DISCRIMINANT: NonZeroI64 = NonZeroI64::new(-1).unwrap();
 static mut DISC_STR: String = String::new();
@@ -24,11 +24,11 @@ pub fn is4kp1() -> bool {
     unsafe { DISCRIMINANT.get() & 3 == 1 }
 }
 
-pub unsafe fn set(d: NonZeroI64, plain: bool) -> anyhow::Result<()> {
+pub unsafe fn set(d: NonZeroI64, plain: bool) -> Result<(), Box<dyn Error>> {
     // this is a critical section, but we ensure only called once or using lock.
     unsafe {
         if let Some(e) = d.get().checked_isqrt() && e * e == d.get() {
-            anyhow::bail!("discriminant can't be a square");
+            return Err("discriminant can't be a square".into());
         }
         DISCRIMINANT = d;
         #[allow(clippy::deref_addrof)]
@@ -37,7 +37,11 @@ pub unsafe fn set(d: NonZeroI64, plain: bool) -> anyhow::Result<()> {
             if plain { "{\\rm i}" } else { "\\mathrm i" }.clone_into(&mut *&raw mut DISC_LATEX);
         } else {
             DISC_STR = format!("√{d}");
-            DISC_LATEX = format!("\\sqrt{{{d}}}");
+            DISC_LATEX = if matches!(d.get(), 0..10) {
+                format!("\\sqrt{d}")
+            } else {
+                format!("\\sqrt{{{d}}}")
+            };
         }
         Ok(())
     }

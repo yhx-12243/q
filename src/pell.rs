@@ -1,10 +1,9 @@
 use core::num::Wrapping;
 
 use hashbrown::HashSet;
-use num::{
-    BigInt, BigUint, Integer, One, Signed, Zero,
-    bigint::{IntDigits, Sign},
-};
+use num_bigint::{BigDigits, BigInt, BigUint, IntDigits, Sign};
+use num_integer::Integer;
+use num_traits::{One, Signed, Zero};
 
 use crate::{CONFIG, qi::QI, qr::quadratic_residue};
 
@@ -32,18 +31,31 @@ struct Mat2By2 {
 
 /// matrix multiplication.
 fn matmul(lhs: &mut Mat2By2, rhs: &Mat2By2) {
-    let ab = &lhs.a * &rhs.b;
-    let bc = &lhs.b * &rhs.c;
-    let cb = &lhs.c * &rhs.b;
-    let dc = &lhs.d * &rhs.c;
-    lhs.a *= &rhs.a;
-    lhs.a += bc;
-    lhs.b *= &rhs.d;
-    lhs.b += ab;
-    lhs.c *= &rhs.a;
-    lhs.c += dc;
-    lhs.d *= &rhs.d;
-    lhs.d += cb;
+    #[inline]
+    fn fma(acc: &mut BigUint, b: &BigUint, c: &BigUint) {
+        {
+            let acc = acc.digits_mut();
+            let new_len = b.len() + c.len() + 1;
+            if new_len > acc.len() {
+                *acc = BigDigits::Heap(std::vec::from_elem(0, new_len));
+            }
+            num_bigint::mac3(acc, b.digits(), c.digits());
+        }
+        acc.normalize();
+    }
+
+    let mut aa = &lhs.a * &rhs.a;
+    let mut ab = &lhs.a * &rhs.b;
+    let mut ca = &lhs.c * &rhs.a;
+    let mut cb = &lhs.c * &rhs.b;
+    fma(&mut aa, &lhs.b, &rhs.c);
+    fma(&mut ab, &lhs.b, &rhs.d);
+    fma(&mut ca, &lhs.d, &rhs.c);
+    fma(&mut cb, &lhs.d, &rhs.d);
+    lhs.a = aa;
+    lhs.b = ab;
+    lhs.c = ca;
+    lhs.d = cb;
 }
 
 /// inner method of divide & conquer (qs should not be empty)

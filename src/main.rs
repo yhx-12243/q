@@ -1,10 +1,9 @@
 #![feature(
+    box_patterns,
+    core_io_internals,
     debug_closure_helpers,
-    exit_status_error,
     fmt_internals,
-    formatting_options,
-    integer_sign_cast,
-    let_chains,
+    likely_unlikely,
     slice_ptr_get,
     stmt_expr_attributes,
 )]
@@ -31,11 +30,11 @@ struct Args {
     D: core::num::NonZeroI64,
     #[arg(
         long,
-        default_value = "./",
-        value_name = "dir",
-        help = "The directory of YAFU output"
+        default_value = factor::DEFAULT_SERVER,
+        value_name = "url",
+        help = "The URL of the factordb mirror server"
     )]
-    dir: std::path::PathBuf,
+    factordb_mirror_server: String,
     #[arg(
         short = 'M',
         long,
@@ -50,30 +49,29 @@ struct Args {
 
 static CONFIG: std::sync::OnceLock<Args> = std::sync::OnceLock::new();
 
-fn main() -> anyhow::Result<()> {
+fn main() -> Result<(), Box<dyn core::error::Error>> {
     use clap::Parser;
     use ideal::Ideal;
 
     let args @ Args { plain_tex, .. } = Args::parse();
     unsafe { discriminant::set(args.D, args.plain_tex)? };
 
-    std::fs::create_dir_all(&args.dir)?;
     CONFIG
         .set(args)
-        .map_err(|_| anyhow::anyhow!("unable to set config"))?;
+        .map_err(|_| Box::<dyn core::error::Error>::from("unable to set config"))?;
 
     let mut ideal = Ideal::read(std::io::stdin().lock())?;
 
     ideal.reduce();
 
     {
-        use core::fmt::{Arguments, rt::Argument};
+        use core::fmt::from_fn;
         use std::io::Write;
 
         let fmt = if plain_tex { Ideal::tex } else { Ideal::latex };
 
         let mut stdout = std::io::stdout().lock();
-        stdout.write_fmt(Arguments::new_v1(&["", "="], &[Argument::new(&ideal, fmt)]))?;
+        write!(stdout, "{}=", from_fn(|f| fmt(&ideal, f)))?;
 
         let ideals = ideal.factor()?;
 
@@ -82,7 +80,7 @@ fn main() -> anyhow::Result<()> {
         }
 
         for (ideal, exp) in ideals {
-            stdout.write_fmt(Arguments::new_v1(&[""], &[Argument::new(&ideal, fmt)]))?;
+            write!(stdout, "{}", from_fn(|f| fmt(&ideal, f)))?;
             if exp > 1 {
                 write!(stdout, "^{{{exp}}}")?;
             }
