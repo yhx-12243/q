@@ -11,7 +11,7 @@ ciborium = "0.2.2"
 clap = { version = "4.6.1", features = ["derive", "unicode", "wrap_help", "env", "string", "unstable-v5"] }
 clap_derive = { version = "4.6.1", features = ["unstable-v5"] }
 hashbrown = { version = "0.17.1", features = ["nightly", "serde"] }
-num-bigint = { version = "0.5.0", features = ["rand_0_10"] }
+num-bigint = { version = "0.5.1", features = ["rand_0_10"] }
 num-integer = "0.1.46"
 num-traits = "0.2.19"
 rand = { version = "0.10.2", features = ["log"] }
@@ -36,7 +36,7 @@ arbitrary_source_item_ordering = { level = "allow", priority = 1 }
 arithmetic_side_effects = { level = "allow", priority = 1 }
 as_conversions = { level = "allow", priority = 1 }
 # cast_lossless = { level = "allow", priority = 1 } # u32 -> u64
-cast_possible_truncation = { level = "allow", priority = 1 } # u64 -> u32
+# cast_possible_truncation = { level = "allow", priority = 1 } # u64 -> u32
 # cast_possible_wrap = { level = "allow", priority = 1 } # u32 -> i32
 # cast_sign_loss = { level = "allow", priority = 1 } # i32 -> u32
 default_numeric_fallback = { level = "allow", priority = 1 }

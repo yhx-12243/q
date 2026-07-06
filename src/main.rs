@@ -1,8 +1,10 @@
 #![feature(
     box_patterns,
+    const_trait_impl,
     core_io_internals,
     debug_closure_helpers,
     fmt_internals,
+    integer_casts,
     likely_unlikely,
     slice_ptr_get,
     stmt_expr_attributes,
