@@ -20,7 +20,7 @@ mod small_primes {
         loop {
             if c[i as usize] == u16::MAX {
                 p[n] = i;
-                c[i as usize] = n as u16;
+                c[i as usize] = n.wrapping_cast();
                 n += 1;
             }
             let mut j = 0usize;
@@ -28,7 +28,7 @@ mod small_primes {
                 let Some(v) = i.checked_mul(p[j]) else {
                     break;
                 };
-                c[v as usize] = j as u16;
+                c[v as usize] = j.wrapping_cast();
                 j += 1;
             }
             if let Some(nxt) = i.checked_add(1) {
@@ -78,11 +78,11 @@ fn mul_mod(a: u64, b: u64, m: u64) -> u64 {
     let p = u128::from(a) * u128::from(b);
     #[cfg(target_arch = "x86_64")]
     {
-        rem((p >> 64) as u64, p as u64, m)
+        rem((p >> 64).wrapping_cast(), p.wrapping_cast(), m)
     }
     #[cfg(not(target_arch = "x86_64"))]
     {
-        (p % u128::from(m)) as u64
+        (p % u128::from(m)).wrapping_cast()
     }
 }
 
@@ -91,11 +91,11 @@ fn sqr_add_mod(a: u64, b: u64, m: u64) -> u64 {
     let p = u128::from(a) * u128::from(a) + u128::from(b);
     #[cfg(target_arch = "x86_64")]
     {
-        rem((p >> 64) as u64, p as u64, m)
+        rem((p >> 64).wrapping_cast(), p.wrapping_cast(), m)
     }
     #[cfg(not(target_arch = "x86_64"))]
     {
-        (p % u128::from(m)) as u64
+        (p % u128::from(m)).wrapping_cast()
     }
 }
 
@@ -200,7 +200,7 @@ pub fn factor_inner<T: Rng + ?Sized>(mut n: u64, result: &mut BTreeMap<u64, u32>
             factor_inner(p, result, rng);
             n /= p;
         } else {
-            let pid = LEAST_FACTORS[n as usize];
+            let pid = LEAST_FACTORS[n.wrapping_cast::<usize>()];
             let p = SMALL_PRIMES[pid as usize].into();
             let mut a = 0;
             while n % p == 0 {

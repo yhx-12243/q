@@ -20,12 +20,12 @@ unsafe extern "C" {
 pub fn jacobi(a: &BigUint, p: &BigUint) -> i32 {
     let mpz_a = mpz_t {
         alloc: 0,
-        size: a.len().cast_signed() as i32,
+        size: a.len().wrapping_cast(),
         d: NonNull::from(a.digits()).as_non_null_ptr(),
     };
     let mpz_p = mpz_t {
         alloc: 0,
-        size: p.len().cast_signed() as i32,
+        size: p.len().wrapping_cast(),
         d: NonNull::from(p.digits()).as_non_null_ptr(),
     };
     unsafe { mpz_jacobi(&raw const mpz_a, &raw const mpz_p) }

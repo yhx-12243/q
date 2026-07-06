@@ -10,7 +10,7 @@ use crate::CONFIG;
 
 mod factor_u64;
 
-pub const DEFAULT_SERVER: &str = "https://ec2-3-145-200-48.us-east-2.compute.amazonaws.com/factordb";
+pub const DEFAULT_SERVER: &str = "https://43.138.56.99/factordb";
 
 #[derive(Deserialize)]
 struct FactorDBMirrorResp {
