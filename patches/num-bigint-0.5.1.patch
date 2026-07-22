@@ -210,7 +210,7 @@ index fd7d1a6..b0d032c 100644
      fn digits_mut(&mut self) -> &mut BigDigits;
      fn normalize(&mut self);
 diff --git a/src/biguint/division.rs b/src/biguint/division.rs
-index b414696..e02f502 100644
+index bbd10de..50dca59 100644
 --- a/src/biguint/division.rs
 +++ b/src/biguint/division.rs
 @@ -84,7 +84,7 @@ fn div_half(rem: BigDigit, digit: BigDigit, divisor: BigDigit) -> (BigDigit, Big
