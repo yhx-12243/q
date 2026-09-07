@@ -812,7 +812,7 @@ dependencies = [
  "reqwest",
  "serde",
  "serde_json",
- "smallvec 2.0.0-alpha.12",
+ "smallvec 2.0.0-alpha.13",
 ]
 
 [[package]]
@@ -1025,9 +1025,9 @@ checksum = "8ed6a63f02c8539c91a8685a86f4099661ba3da017932f6ebbea6de3f0fa7c90"
 
 [[package]]
 name = "smallvec"
-version = "2.0.0-alpha.12"
+version = "2.0.0-alpha.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ef784004ca8777809dcdad6ac37629f0a97caee4c685fcea805278d81dd8b857"
+checksum = "ce56585dbefaf71c9723e9a269fa65227bdcdbb6fd2f3ef50d264c65e067c648"
 
 [[package]]
 name = "socket2"
